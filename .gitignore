@@ -1,0 +1,28 @@
+# Android Studio / IntelliJ
+*.iml
+.idea/**
+
+# Gradle
+.gradle/
+**/build/
+
+# OS
+.DS_Store
+
+# Android local properties (SDK 경로, env 변수)
+local.properties
+
+# Native build outputs
+.externalNativeBuild/
+.cxx/
+
+# 캡처(스크린샷), APK etc.
+captures/
+
+# (선택) 키스토어 비번·alias 저장용 파일
+keystore.properties
+*.jks
+*.keystore
+
+# (선택) dotenv 파일
+.env
