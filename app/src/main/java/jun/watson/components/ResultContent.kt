@@ -3,9 +3,12 @@ package jun.watson.components
 import android.content.Intent
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -18,6 +21,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import jun.watson.R
@@ -31,6 +36,11 @@ import jun.watson.model.dto.SearchResponseDto
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import jun.watson.model.data.RewardCalculator
 
 @Composable
 fun ResultContent(
@@ -57,6 +67,8 @@ fun ResultContent(
     var selectedTab by remember { mutableStateOf(-1) }
     var showGuide by remember { mutableStateOf(false) }
     
+    val disabledServers = remember { mutableStateListOf<String>() }
+
     val serverCheckedStates = remember(searchResponse?.expeditions?.expeditions) {
         mutableStateMapOf<String, List<Boolean>>().apply {
             searchResponse?.expeditions?.expeditions?.forEach { (server, characters) ->
@@ -106,23 +118,35 @@ fun ResultContent(
     }
 
     val detailedViewStates = remember(searchResponse?.expeditions?.expeditions) {
-        mutableStateMapOf<String, List<Boolean>>().apply {
+        mutableStateMapOf<String, Boolean>().apply {
             searchResponse?.expeditions?.expeditions?.forEach { (server, characters) ->
-                put(server, List(characters.size) { false })
+                characters.forEach { character ->
+                    put("$server:${character.characterName}", false)
+                }
+            }
+        }
+    }
+
+    val updateGoldRewardState = { server: String, index: Int, checked: Boolean ->
+        val currentStates = goldRewardStates[server]
+        if (currentStates != null) {
+            goldRewardStates[server] = currentStates.toMutableList().apply {
+                this[index] = checked
+            }
+        }
+    }
+
+    val updateExcludedState = { server: String, index: Int, checked: Boolean ->
+        val currentStates = excludedStates[server]
+        if (currentStates != null) {
+            excludedStates[server] = currentStates.toMutableList().apply {
+                this[index] = checked
             }
         }
     }
 
     val updateDetailedViewState = { server: String, characterName: String, checked: Boolean ->
-        val currentStates = detailedViewStates[server]
-        if (currentStates != null) {
-            val characterIndex = searchResponse?.expeditions?.expeditions?.get(server)?.indexOfFirst { it.characterName == characterName }
-            if (characterIndex != null && characterIndex >= 0) {
-                detailedViewStates[server] = currentStates.toMutableList().apply {
-                    this[characterIndex] = checked
-                }
-            }
-        }
+        detailedViewStates["$server:$characterName"] = checked
     }
 
     var batchExcludeLevel by remember { mutableStateOf("") }
@@ -152,73 +176,146 @@ fun ResultContent(
         }
     }
 
-    val updateGoldRewardState = { server: String, characterName: String, checked: Boolean ->
-        val currentStates = goldRewardStates[server]
-        if (currentStates != null) {
-            val characterIndex = searchResponse?.expeditions?.expeditions?.get(server)?.indexOfFirst { it.characterName == characterName }
-            if (characterIndex != null && characterIndex >= 0) {
-                goldRewardStates[server] = currentStates.toMutableList().apply {
-                    this[characterIndex] = checked
-                }
-            }
-        }
-    }
-
-    val updateExcludedState = { server: String, characterName: String, checked: Boolean ->
-        val currentStates = excludedStates[server]
-        if (currentStates != null) {
-            val characterIndex = searchResponse?.expeditions?.expeditions?.get(server)?.indexOfFirst { it.characterName == characterName }
-            if (characterIndex != null && characterIndex >= 0) {
-                excludedStates[server] = currentStates.toMutableList().apply {
-                    this[characterIndex] = checked
+    val serverGoldInfo = remember(searchResponse?.expeditions?.expeditions) {
+        derivedStateOf {
+            if (searchResponse == null) emptyMap()
+            else {
+                val calculator = RewardCalculator(resourceStates.mapValues { Resource(it.key, it.value) }, chaosOption, guardianOption)
+                searchResponse.expeditions.expeditions.mapValues { (server, characters) ->
+                    var tradableGold = 0.0
+                    var boundGold = 0.0
+                    
+                    characters.forEach { character ->
+                        val isExcluded = excludedStates[server]?.get(characters.indexOf(character)) ?: false
+                        
+                        if (!isExcluded) {
+                            val chaosReward = calculator.calculateChaosReward(character, isExcluded)
+                            val guardianReward = calculator.calculateGuardianReward(character, isExcluded)
+                            
+                            tradableGold += chaosReward.tradableGold + guardianReward.tradableGold
+                            boundGold += chaosReward.boundGold + guardianReward.boundGold
+                            
+                            val availableRaids = Raid.getAvailableRaids(character.level, 6)
+                            val checkedStates = serverCheckedStates["$server:${character.characterName}"] ?: emptyList()
+                            val isGoldReward = goldRewardStates[server]?.get(characters.indexOf(character)) ?: false
+                            
+                            availableRaids.withIndex()
+                                .filter { checkedStates.getOrNull(it.index) == true }
+                                .forEach { (_, raid) ->
+                                    val raidReward = calculator.calculateRaidReward(raid, isGoldReward)
+                                    tradableGold += raidReward.tradableGold
+                                    boundGold += raidReward.boundGold
+                                }
+                        }
+                    }
+                    Pair(tradableGold, boundGold)
                 }
             }
         }
     }
 
     val sortedServers = remember(searchResponse?.expeditions?.expeditions) {
-        if (searchResponse == null) emptyList()
-        else {
-            val serverGoldMap = searchResponse.expeditions.expeditions.mapValues { (server, characters) ->
-                characters.sumOf { character ->
-                    val chaosReward = ChaosDungeon.getSuitableReward(character.level)
-                    val chaosTotalGold = chaosReward.run {
-                        shards.entries.sumOf { (item, count) -> (resourceStates[item] ?: 0.0) * count } +
-                        weaponStones.entries.sumOf { (item, count) -> (resourceStates[item] ?: 0.0) * count } +
-                        armorStones.entries.sumOf { (item, count) -> (resourceStates[item] ?: 0.0) * count } +
-                        leapStones.entries.sumOf { (item, count) -> (resourceStates[item] ?: 0.0) * count }
-                    }
-                    val guardianReward = Guardian.getSuitableReward(character.level)
-                    val guardianTotalGold = guardianReward.run {
-                        shards.entries.sumOf { (item, count) -> (resourceStates[item] ?: 0.0) * count } +
-                        weaponStones.entries.sumOf { (item, count) -> (resourceStates[item] ?: 0.0) * count } +
-                        armorStones.entries.sumOf { (item, count) -> (resourceStates[item] ?: 0.0) * count } +
-                        leapStones.entries.sumOf { (item, count) -> (resourceStates[item] ?: 0.0) * count }
-                    }
-                    val availableRaids = Raid.getAvailableRaids(character.level, 6)
-                    val checkedStates = serverCheckedStates["$server:${character.characterName}"] ?: emptyList()
-                    val isGoldReward = goldRewardStates[server]?.get(characters.indexOf(character)) ?: false
-                    val isExcluded = excludedStates[server]?.get(characters.indexOf(character)) ?: false
-                    val raidTotalGold = availableRaids.withIndex()
-                        .filter { checkedStates.getOrNull(it.index) == true }
-                        .sumOf { (_, raid) ->
-                            val reward = if (isGoldReward) raid.getReward(true) else raid.getReward(false)
+        derivedStateOf {
+            if (searchResponse == null) emptyList()
+            else {
+                val serverGoldMap = searchResponse.expeditions.expeditions.mapValues { (server, characters) ->
+                    var tradableGold = 0.0
+                    var boundGold = 0.0
+                    
+                    characters.forEach { character ->
+                        val chaosReward = ChaosDungeon.getSuitableReward(character.level)
+                        val guardianReward = Guardian.getSuitableReward(character.level)
+                        val availableRaids = Raid.getAvailableRaids(character.level, 6)
+                        
+                        // 카오스 던전 보상
+                        val chaosTradableReward = chaosReward.getChaosTradableReward()
+                        val chaosBoundReward = chaosReward.getChaosBoundReward()
+                        
+                        // 가디언 토벌 보상
+                        val guardianTradableReward = guardianReward.getGuardianTradableReward()
+                        val guardianBoundReward = guardianReward.getGuardianBoundReward()
+                        
+                        // 기본 보상 계산
+                        tradableGold += chaosTradableReward.gold.toDouble() + guardianTradableReward.gold.toDouble()
+                        boundGold += chaosBoundReward.gold.toDouble() + guardianBoundReward.gold.toDouble()
+                        
+                        // 아이템 보상 계산
+                        chaosTradableReward.weaponStones.forEach { (item, count) ->
+                            tradableGold += count * (resourceStates[item] ?: 0.0)
+                        }
+                        chaosTradableReward.armorStones.forEach { (item, count) ->
+                            tradableGold += count * (resourceStates[item] ?: 0.0)
+                        }
+                        chaosTradableReward.jewelries.forEach { (_, count) ->
+                            tradableGold += count
+                        }
+                        
+                        chaosBoundReward.shards.forEach { (item, count) ->
+                            boundGold += count * (resourceStates[item] ?: 0.0)
+                        }
+                        chaosBoundReward.leapStones.forEach { (item, count) ->
+                            boundGold += count * (resourceStates[item] ?: 0.0)
+                        }
+                        
+                        guardianTradableReward.weaponStones.forEach { (item, count) ->
+                            tradableGold += count * (resourceStates[item] ?: 0.0)
+                        }
+                        guardianTradableReward.armorStones.forEach { (item, count) ->
+                            tradableGold += count * (resourceStates[item] ?: 0.0)
+                        }
+                        guardianTradableReward.leapStones.forEach { (item, count) ->
+                            tradableGold += count * (resourceStates[item] ?: 0.0)
+                        }
+                        guardianTradableReward.jewelries.forEach { (_, count) ->
+                            tradableGold += count
+                        }
+                        
+                        guardianBoundReward.shards.forEach { (item, count) ->
+                            boundGold += count * (resourceStates[item] ?: 0.0)
+                        }
+                        
+                        // 레이드 보상 (기본적으로 3개 선택)
+                        availableRaids.take(3).forEach { raid ->
+                            val reward = raid.getReward(true)
                             val tradableReward = reward.getRaidTradableReward()
                             val boundReward = reward.getRaidBoundReward()
                             
-                            tradableReward.gold.toDouble() +
-                            tradableReward.shards.entries.sumOf { (item, count) -> (resourceStates[item] ?: 0.0) * count } +
-                            tradableReward.weaponStones.entries.sumOf { (item, count) -> (resourceStates[item] ?: 0.0) * count } +
-                            tradableReward.armorStones.entries.sumOf { (item, count) -> (resourceStates[item] ?: 0.0) * count } +
-                            tradableReward.leapStones.entries.sumOf { (item, count) -> (resourceStates[item] ?: 0.0) * count }
+                            tradableGold += tradableReward.gold.toDouble()
+                            tradableReward.shards.forEach { (item, count) ->
+                                tradableGold += count * (resourceStates[item] ?: 0.0)
+                            }
+                            tradableReward.weaponStones.forEach { (item, count) ->
+                                tradableGold += count * (resourceStates[item] ?: 0.0)
+                            }
+                            tradableReward.armorStones.forEach { (item, count) ->
+                                tradableGold += count * (resourceStates[item] ?: 0.0)
+                            }
+                            tradableReward.leapStones.forEach { (item, count) ->
+                                tradableGold += count * (resourceStates[item] ?: 0.0)
+                            }
+                            
+                            boundReward.shards.forEach { (item, count) ->
+                                boundGold += count * (resourceStates[item] ?: 0.0)
+                            }
+                            boundReward.weaponStones.forEach { (item, count) ->
+                                boundGold += count * (resourceStates[item] ?: 0.0)
+                            }
+                            boundReward.armorStones.forEach { (item, count) ->
+                                boundGold += count * (resourceStates[item] ?: 0.0)
+                            }
+                            boundReward.leapStones.forEach { (item, count) ->
+                                boundGold += count * (resourceStates[item] ?: 0.0)
+                            }
                         }
-                    chaosTotalGold + guardianTotalGold + raidTotalGold
+                    }
+                    Pair(tradableGold, boundGold)
                 }
+                
+                serverGoldMap.entries
+                    .filter { (_, gold) -> gold.first + gold.second > 0 }
+                    .sortedByDescending { (_, gold) -> gold.first + gold.second }
+                    .map { it.key }
             }
-            serverGoldMap
-                .toList()
-                .sortedByDescending { (_, gold) -> gold }
-                .map { it.first }
         }
     }
 
@@ -311,63 +408,106 @@ fun ResultContent(
                     )
                 }
                 searchResponse != null -> {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        item {
-                            TotalRewardSummary(
-                                expeditions = searchResponse.expeditions.expeditions,
-                                resourceMap = resourceStates.mapValues { Resource(it.key, it.value) },
-                                serverCheckedStates = serverCheckedStates,
-                                goldRewardStates = goldRewardStates,
-                                excludedStates = excludedStates,
-                                sortedServers = sortedServers,
-                                chaosOption = chaosOption,
-                                guardianOption = guardianOption
-                            )
-                        }
-                        sortedServers.forEach { server ->
-                            val characters = searchResponse.expeditions.expeditions[server] ?: emptyList()
-                            val hasCalculableCharacters = characters.any { character ->
-                                Raid.getAvailableRaids(character.level, 6).isNotEmpty()
-                            }
-                            
-                            if (hasCalculableCharacters) {
-                                item {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Text(
-                                            text = server,
-                                            fontSize = 20.sp,
-                                            modifier = Modifier.padding(vertical = 8.dp).weight(1f)
-                                        )
-                                        TextButton(onClick = {
-                                            expandedStates[server] = !(expandedStates[server] ?: true)
-                                        }) {
-                                            Text(if (expandedStates[server] == true) "숨기기" else "펼치기")
-                                        }
-                                    }
-                                }
-                                if (expandedStates[server] == true) {
-                                    characters.forEach { character ->
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 16.dp)
+                        ) {
+                            if (searchResponse.expeditions.expeditions != null) {
+                                TotalRewardSummary(
+                                    expeditions = searchResponse.expeditions.expeditions,
+                                    resourceMap = resourceStates.mapValues { Resource(it.key, it.value) },
+                                    serverCheckedStates = serverCheckedStates,
+                                    goldRewardStates = goldRewardStates,
+                                    excludedStates = excludedStates,
+                                    sortedServers = sortedServers.value,
+                                    chaosOption = chaosOption,
+                                    guardianOption = guardianOption,
+                                    disabledServers = disabledServers
+                                )
+
+                                Spacer(modifier = Modifier.height(16.dp))
+
+                                LazyColumn(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .weight(1f)
+                                ) {
+                                    sortedServers.value.forEach { server ->
+                                        val characters = searchResponse.expeditions.expeditions[server] ?: return@forEach
+                                        val isExpanded = if (server in disabledServers) false else (expandedStates[server] ?: false)
+                                        
                                         item {
-                                            CharacterCard(
-                                                character = character,
-                                                resourceMap = resourceStates.mapValues { Resource(it.key, it.value) },
-                                                checkedStates = serverCheckedStates["$server:${character.characterName}"] ?: emptyList(),
-                                                goldRewardState = goldRewardStates[server]?.get(characters.indexOf(character)) ?: false,
-                                                excludedState = excludedStates[server]?.get(characters.indexOf(character)) ?: false,
-                                                detailedViewState = detailedViewStates[server]?.get(characters.indexOf(character)) ?: false,
-                                                onCheckedChange = { index, checked -> updateCheckedState(server, character.characterName, index, checked) },
-                                                onGoldRewardChange = { checked -> updateGoldRewardState(server, character.characterName, checked) },
-                                                onExcludedChange = { checked -> updateExcludedState(server, character.characterName, checked) },
-                                                onDetailedViewChange = { checked -> updateDetailedViewState(server, character.characterName, checked) },
-                                                chaosOption = chaosOption,
-                                                guardianOption = guardianOption
-                                            )
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(vertical = 8.dp),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                ) {
+                                                    Text(
+                                                        text = server,
+                                                        fontSize = 18.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = MaterialTheme.colorScheme.primary
+                                                    )
+                                                    val goldInfo = serverGoldInfo.value[server]
+                                                    if (goldInfo != null) {
+                                                        Row(
+                                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                        ) {
+                                                            Text(
+                                                                text = "거래 가능: ${"%,.0f".format(goldInfo.first)}G",
+                                                                fontSize = 14.sp,
+                                                                color = MaterialTheme.colorScheme.primary,
+                                                                textDecoration = if (server in disabledServers) TextDecoration.LineThrough else TextDecoration.None
+                                                            )
+                                                            Text(
+                                                                text = "귀속: ${"%,.0f".format(goldInfo.second)}G",
+                                                                fontSize = 14.sp,
+                                                                color = MaterialTheme.colorScheme.secondary,
+                                                                textDecoration = if (server in disabledServers) TextDecoration.LineThrough else TextDecoration.None
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                                if (server !in disabledServers) {
+                                                    IconButton(onClick = {
+                                                        expandedStates[server] = !isExpanded
+                                                    }) {
+                                                        Icon(
+                                                            imageVector = if (isExpanded) Icons.Default.KeyboardArrowDown else Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                                            contentDescription = if (isExpanded) "접기" else "펼치기",
+                                                            tint = MaterialTheme.colorScheme.primary
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        if (isExpanded) {
+                                            itemsIndexed(characters) { index, character ->
+                                                CharacterCard(
+                                                    character = character,
+                                                    resourceMap = resourceStates.mapValues { Resource(it.key, it.value) },
+                                                    checkedStates = serverCheckedStates["$server:${character.characterName}"] ?: emptyList(),
+                                                    goldRewardState = goldRewardStates[server]?.get(index) ?: false,
+                                                    excludedState = excludedStates[server]?.get(index) ?: false,
+                                                    detailedViewState = detailedViewStates["$server:${character.characterName}"] ?: false,
+                                                    onCheckedChange = { idx, checked -> updateCheckedState(server, character.characterName, idx, checked) },
+                                                    onGoldRewardChange = { checked -> updateGoldRewardState(server, index, checked) },
+                                                    onExcludedChange = { checked -> updateExcludedState(server, index, checked) },
+                                                    onDetailedViewChange = { checked -> updateDetailedViewState(server, character.characterName, checked) },
+                                                    chaosOption = chaosOption,
+                                                    guardianOption = guardianOption,
+                                                    index = index
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -614,17 +754,55 @@ fun ResultContent(
                                 Text(buttonText)
                             }
                         }
-                    }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                    Button(
-                        onClick = { selectedTab = -1 },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp)
-                    ) {
-                        Text("닫기")
+                        Text(
+                            text = "서버 비활성화",
+                            fontSize = 16.sp,
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp)
+                        ) {
+                            sortedServers.value.forEach { server ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Checkbox(
+                                        checked = server in disabledServers,
+                                        onCheckedChange = { checked ->
+                                            if (checked) {
+                                                disabledServers.add(server)
+                                            } else {
+                                                disabledServers.remove(server)
+                                            }
+                                        }
+                                    )
+                                    Text(
+                                        text = server,
+                                        fontSize = 14.sp,
+                                        modifier = Modifier.padding(start = 8.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Button(
+                            onClick = { selectedTab = -1 },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                        ) {
+                            Text("닫기")
+                        }
                     }
                 }
             }
