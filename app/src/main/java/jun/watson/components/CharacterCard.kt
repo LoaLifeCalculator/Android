@@ -3,6 +3,7 @@ package jun.watson.components
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,6 +19,9 @@ import jun.watson.model.dto.CharacterResponseDto
 import jun.watson.model.data.ChaosDungeon
 import jun.watson.model.data.Guardian
 import jun.watson.model.data.Raid
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import jun.watson.model.data.RewardCalculator
 
 @Composable
 fun CharacterCard(
@@ -32,126 +36,41 @@ fun CharacterCard(
     onExcludedChange: (Boolean) -> Unit,
     onDetailedViewChange: (Boolean) -> Unit,
     chaosOption: Int,
-    guardianOption: Int
+    guardianOption: Int,
+    index: Int
 ) {
-    val chaosReward = remember(character.level) {
-        ChaosDungeon.getSuitableReward(character.level)
-    }
-    val chaosTradableGold = remember(chaosReward, resourceMap, chaosOption) {
-        if (chaosOption == 2 || excludedState) 0.0 else {
-            val tradableReward = chaosReward.getChaosTradableReward()
-            var sum = tradableReward.gold.toDouble()
-            tradableReward.weaponStones.forEach { (item, count) ->
-                val price = resourceMap[item]?.avgPrice ?: 0.0
-                sum += count * price
-            }
-            tradableReward.armorStones.forEach { (item, count) ->
-                val price = resourceMap[item]?.avgPrice ?: 0.0
-                sum += count * price
-            }
-            tradableReward.jewelries.forEach { (_, count) ->
-                sum += count
-            }
-            sum * (if (chaosOption == 1) 14.0/3.0 else 7.0)
-        }
-    }
-    val chaosBoundGold = remember(chaosReward, resourceMap, chaosOption) {
-        if (chaosOption == 2 || excludedState) 0.0 else {
-            val boundReward = chaosReward.getChaosBoundReward()
-            var sum = 0.0
-            boundReward.shards.forEach { (item, count) ->
-                val price = resourceMap[item]?.avgPrice ?: 0.0
-                sum += count * price
-            }
-            boundReward.leapStones.forEach { (item, count) ->
-                val price = resourceMap[item]?.avgPrice ?: 0.0
-                sum += count * price
-            }
-            sum * (if (chaosOption == 1) 14.0/3.0 else 7.0)
-        }
+    val calculator = remember(resourceMap, chaosOption, guardianOption) {
+        RewardCalculator(resourceMap, chaosOption, guardianOption)
     }
 
-    val guardianReward = remember(character.level) {
-        Guardian.getSuitableReward(character.level)
-    }
-    val guardianTradableGold = remember(guardianReward, resourceMap, guardianOption) {
-        if (guardianOption == 2 || excludedState) 0.0 else {
-            val tradableReward = guardianReward.getGuardianTradableReward()
-            var sum = tradableReward.gold.toDouble()
-            tradableReward.weaponStones.forEach { (item, count) ->
-                val price = resourceMap[item]?.avgPrice ?: 0.0
-                sum += count * price
-            }
-            tradableReward.armorStones.forEach { (item, count) ->
-                val price = resourceMap[item]?.avgPrice ?: 0.0
-                sum += count * price
-            }
-            tradableReward.leapStones.forEach { (item, count) ->
-                val price = resourceMap[item]?.avgPrice ?: 0.0
-                sum += count * price
-            }
-            tradableReward.jewelries.forEach { (_, count) ->
-                sum += count
-            }
-            sum * (if (guardianOption == 1) 14.0/3.0 else 7.0)
-        }
-    }
-    val guardianBoundGold = remember(guardianReward, resourceMap, guardianOption) {
-        if (guardianOption == 2 || excludedState) 0.0 else {
-            val boundReward = guardianReward.getGuardianBoundReward()
-            var sum = 0.0
-            boundReward.shards.forEach { (item, count) ->
-                val price = resourceMap[item]?.avgPrice ?: 0.0
-                sum += count * price
-            }
-            sum * (if (guardianOption == 1) 14.0/3.0 else 7.0)
-        }
+    val chaosReward = remember(character, excludedState, calculator) {
+        calculator.calculateChaosReward(character, excludedState)
     }
 
-    val availableRaids = remember(character.level) {
-        Raid.getAvailableRaids(character.level, 6)
-    }
-    val raidRewards = remember(checkedStates, availableRaids, resourceMap, goldRewardState) {
-        if (excludedState) Pair(0.0, 0.0) else {
-            var tradableGold = 0.0
-            var boundGold = 0.0
-            availableRaids.withIndex()
-                .filter { checkedStates.getOrNull(it.index) == true }
-                .forEach { (_, raid) ->
-                    val reward = if (goldRewardState) raid.getReward(true) else raid.getReward(false)
-                    val tradableReward = reward.getRaidTradableReward()
-                    val boundReward = reward.getRaidBoundReward()
-                    
-                    tradableGold += tradableReward.gold.toDouble()
-                    tradableReward.jewelries.forEach { (_, count) ->
-                        tradableGold += count
-                    }
-
-                    boundReward.shards.forEach { (item: Item, count: Int) ->
-                        val price = resourceMap[item]?.avgPrice ?: 0.0
-                        boundGold += count * price
-                    }
-                    boundReward.weaponStones.forEach { (item: Item, count: Int) ->
-                        val price = resourceMap[item]?.avgPrice ?: 0.0
-                        boundGold += count * price
-                    }
-                    boundReward.armorStones.forEach { (item: Item, count: Int) ->
-                        val price = resourceMap[item]?.avgPrice ?: 0.0
-                        boundGold += count * price
-                    }
-                    boundReward.leapStones.forEach { (item: Item, count: Int) ->
-                        val price = resourceMap[item]?.avgPrice ?: 0.0
-                        boundGold += count * price
-                    }
-                }
-            Pair(tradableGold, boundGold)
-        }
+    val guardianReward = remember(character, excludedState, calculator) {
+        calculator.calculateGuardianReward(character, excludedState)
     }
 
-    val totalReward = chaosTradableGold + chaosBoundGold + guardianTradableGold + guardianBoundGold + raidRewards.first + raidRewards.second
+    val raidRewards = remember(character, checkedStates, goldRewardState, calculator) {
+        val availableRaids = Raid.getAvailableRaids(character.level, 6)
+        availableRaids.withIndex()
+            .filter { checkedStates.getOrNull(it.index) == true }
+            .map { (_, raid) -> calculator.calculateRaidReward(raid, goldRewardState) }
+    }
 
-    Card(
-        modifier = Modifier.fillMaxWidth()
+    val totalTradableGold = chaosReward.tradableGold + guardianReward.tradableGold + raidRewards.sumOf { it.tradableGold }
+    val totalBoundGold = chaosReward.boundGold + guardianReward.boundGold + raidRewards.sumOf { it.boundGold }
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        shape = RoundedCornerShape(8.dp),
+        color = if (index % 2 == 0) 
+            MaterialTheme.colorScheme.surfaceVariant
+        else 
+            MaterialTheme.colorScheme.surface,
+        shadowElevation = 2.dp
     ) {
         Column(
             modifier = Modifier
@@ -163,92 +82,97 @@ fun CharacterCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            text = character.characterName,
-                            fontSize = 16.sp
-                        )
-                        Image(
-                            painter = painterResource(
-                                id = when (character.className) {
-                                    "버서커" -> R.drawable.berserker
-                                    "디스트로이어" -> R.drawable.destroyer
-                                    "워로드" -> R.drawable.gunlancer
-                                    "홀리나이트" -> R.drawable.paladin
-                                    "슬레이어" -> R.drawable.slayer
-                                    "배틀마스터" -> R.drawable.wardancer
-                                    "인파이터" -> R.drawable.scrapper
-                                    "기공사" -> R.drawable.soulfist
-                                    "창술사" -> R.drawable.glaivier
-                                    "스트라이커" -> R.drawable.striker
-                                    "브레이커" -> R.drawable.breaker
-                                    "건슬링어" -> R.drawable.gunslinger
-                                    "데빌헌터" -> R.drawable.deadeye
-                                    "블래스터" -> R.drawable.artillerist
-                                    "호크아이" -> R.drawable.sharpshooter
-                                    "스카우터" -> R.drawable.machinist
-                                    "바드" -> R.drawable.bard
-                                    "서머너" -> R.drawable.summoner
-                                    "아르카나" -> R.drawable.arcanist
-                                    "소서리스" -> R.drawable.sorceress
-                                    "블레이드" -> R.drawable.deathblade
-                                    "데모닉" -> R.drawable.shadowhunter
-                                    "리퍼" -> R.drawable.reaper
-                                    "소울이터" -> R.drawable.souleater
-                                    "도화가" -> R.drawable.artist
-                                    "기상술사" -> R.drawable.aeromancer
-                                    "환수사" -> R.drawable.wildsoul
-                                    else -> R.drawable.ic_launcher_foreground
-                                }
-                            ),
-                            contentDescription = character.className,
-                            modifier = Modifier.size(24.dp),
-                            contentScale = ContentScale.Fit
-                        )
-                    }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
                     Text(
-                        text = "레벨: ${character.level}",
-                        fontSize = 14.sp
+                        text = character.characterName,
+                        fontSize = 16.sp
+                    )
+                    Image(
+                        painter = painterResource(
+                            id = when (character.className) {
+                                "버서커" -> R.drawable.berserker
+                                "디스트로이어" -> R.drawable.destroyer
+                                "워로드" -> R.drawable.gunlancer
+                                "홀리나이트" -> R.drawable.paladin
+                                "슬레이어" -> R.drawable.slayer
+                                "배틀마스터" -> R.drawable.wardancer
+                                "인파이터" -> R.drawable.scrapper
+                                "기공사" -> R.drawable.soulfist
+                                "창술사" -> R.drawable.glaivier
+                                "스트라이커" -> R.drawable.striker
+                                "브레이커" -> R.drawable.breaker
+                                "건슬링어" -> R.drawable.gunslinger
+                                "데빌헌터" -> R.drawable.deadeye
+                                "블래스터" -> R.drawable.artillerist
+                                "호크아이" -> R.drawable.sharpshooter
+                                "스카우터" -> R.drawable.machinist
+                                "바드" -> R.drawable.bard
+                                "서머너" -> R.drawable.summoner
+                                "아르카나" -> R.drawable.arcanist
+                                "소서리스" -> R.drawable.sorceress
+                                "블레이드" -> R.drawable.deathblade
+                                "데모닉" -> R.drawable.shadowhunter
+                                "리퍼" -> R.drawable.reaper
+                                "소울이터" -> R.drawable.souleater
+                                "도화가" -> R.drawable.artist
+                                "기상술사" -> R.drawable.aeromancer
+                                "환수사" -> R.drawable.wildsoul
+                                else -> R.drawable.ic_launcher_foreground
+                            }
+                        ),
+                        contentDescription = character.className,
+                        modifier = Modifier.size(24.dp),
+                        contentScale = ContentScale.Fit,
+                        colorFilter = if (index % 2 == 1) ColorFilter.tint(Color.DarkGray) else null
                     )
                 }
-                Column(
-                    horizontalAlignment = Alignment.End
+                Text(
+                    text = "레벨: ${character.level}",
+                    fontSize = 14.sp
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    modifier = Modifier.padding(end = 16.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "골드 획득",
-                            fontSize = 14.sp,
-                            modifier = Modifier.clickable { onGoldRewardChange(!goldRewardState) }
-                        )
-                        Checkbox(
-                            checked = goldRewardState,
-                            onCheckedChange = onGoldRewardChange,
-                            enabled = !excludedState
-                        )
-                    }
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "계산 제외",
-                            fontSize = 14.sp,
-                            modifier = Modifier.clickable { onExcludedChange(!excludedState) }
-                        )
-                        Checkbox(
-                            checked = excludedState,
-                            onCheckedChange = onExcludedChange
-                        )
-                    }
+                    Text(
+                        text = "골드 획득",
+                        fontSize = 14.sp,
+                        modifier = Modifier.clickable { onGoldRewardChange(!goldRewardState) }
+                    )
+                    Checkbox(
+                        checked = goldRewardState,
+                        onCheckedChange = onGoldRewardChange,
+                        enabled = !excludedState
+                    )
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        text = "계산 제외",
+                        fontSize = 14.sp,
+                        modifier = Modifier.clickable { onExcludedChange(!excludedState) }
+                    )
+                    Checkbox(
+                        checked = excludedState,
+                        onCheckedChange = onExcludedChange
+                    )
                 }
             }
             
-            if (availableRaids.isEmpty() || excludedState) {
+            if (excludedState) {
                 Text(
                     text = "계산 대상에서 제외됐습니다.",
                     fontSize = 14.sp,
@@ -257,76 +181,82 @@ fun CharacterCard(
             } else {
                 Spacer(modifier = Modifier.height(8.dp))
                 
-                Text(
-                    text = "총 보상: ${"%,.0f".format(totalReward)}G",
-                    fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.gold),
+                        contentDescription = "골드",
+                        modifier = Modifier.size(20.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                    Text(
+                        text = "총 보상: ${"%,.0f".format(totalTradableGold + totalBoundGold)}G",
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
 
                 if (detailedViewState) {
-                    if (chaosTradableGold + chaosBoundGold > 0) {
+                    if (chaosReward.tradableGold > 0) {
                         Text(
-                            text = "카던 총 보상: ${"%,.0f".format(chaosTradableGold + chaosBoundGold)}G",
+                            text = "카던 총 보상: ${"%,.0f".format(chaosReward.tradableGold + chaosReward.boundGold)}G",
                             fontSize = 16.sp,
                             color = MaterialTheme.colorScheme.primary
                         )
-                        if (chaosTradableGold > 0) {
+                        if (chaosReward.tradableGold > 0) {
                             Text(
-                                text = "  - 거래 가능: ${"%,.0f".format(chaosTradableGold)}G",
+                                text = "  - 거래 가능: ${"%,.0f".format(chaosReward.tradableGold)}G",
                                 fontSize = 14.sp,
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
-                        if (chaosBoundGold > 0) {
+                        if (chaosReward.boundGold > 0) {
                             Text(
-                                text = "  - 귀속: ${"%,.0f".format(chaosBoundGold)}G",
+                                text = "  - 귀속: ${"%,.0f".format(chaosReward.boundGold)}G",
                                 fontSize = 14.sp,
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
 
-                    if (guardianTradableGold + guardianBoundGold > 0) {
+                    if (guardianReward.tradableGold > 0) {
                         Text(
-                            text = "가토 총 보상: ${"%,.0f".format(guardianTradableGold + guardianBoundGold)}G",
+                            text = "가토 총 보상: ${"%,.0f".format(guardianReward.tradableGold + guardianReward.boundGold)}G",
                             fontSize = 16.sp,
                             color = MaterialTheme.colorScheme.secondary
                         )
-                        if (guardianTradableGold > 0) {
+                        if (guardianReward.tradableGold > 0) {
                             Text(
-                                text = "  - 거래 가능: ${"%,.0f".format(guardianTradableGold)}G",
+                                text = "  - 거래 가능: ${"%,.0f".format(guardianReward.tradableGold)}G",
                                 fontSize = 14.sp,
                                 color = MaterialTheme.colorScheme.secondary
                             )
                         }
-                        if (guardianBoundGold > 0) {
+                        if (guardianReward.boundGold > 0) {
                             Text(
-                                text = "  - 귀속: ${"%,.0f".format(guardianBoundGold)}G",
+                                text = "  - 귀속: ${"%,.0f".format(guardianReward.boundGold)}G",
                                 fontSize = 14.sp,
                                 color = MaterialTheme.colorScheme.secondary
                             )
                         }
                     }
 
-                    if (raidRewards.first + raidRewards.second > 0) {
+                    if (raidRewards.sumOf { it.tradableGold } > 0) {
                         Text(
-                            text = "레이드 총 보상: ${"%,.0f".format(raidRewards.first + raidRewards.second)}G",
+                            text = "레이드 총 보상: ${"%,.0f".format(raidRewards.sumOf { it.tradableGold })}G",
                             fontSize = 16.sp,
                             color = MaterialTheme.colorScheme.tertiary
                         )
-                        if (raidRewards.first > 0) {
-                            Text(
-                                text = "  - 거래 가능: ${"%,.0f".format(raidRewards.first)}G",
-                                fontSize = 14.sp,
-                                color = MaterialTheme.colorScheme.tertiary
-                            )
-                        }
-                        if (raidRewards.second > 0) {
-                            Text(
-                                text = "  - 귀속: ${"%,.0f".format(raidRewards.second)}G",
-                                fontSize = 14.sp,
-                                color = MaterialTheme.colorScheme.tertiary
-                            )
+                        raidRewards.forEach { reward ->
+                            if (reward.tradableGold > 0) {
+                                Text(
+                                    text = "  - 거래 가능: ${"%,.0f".format(reward.tradableGold)}G",
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.tertiary
+                                )
+                            }
                         }
                     }
 
@@ -337,6 +267,7 @@ fun CharacterCard(
                         color = MaterialTheme.colorScheme.tertiary
                     )
                     Column {
+                        val availableRaids = Raid.getAvailableRaids(character.level, 6)
                         availableRaids.forEachIndexed { idx, raid ->
                             Row(
                                 verticalAlignment = Alignment.CenterVertically

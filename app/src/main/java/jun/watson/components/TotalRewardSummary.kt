@@ -1,17 +1,28 @@
 package jun.watson.components
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import jun.watson.R
 import jun.watson.model.data.Item
 import jun.watson.model.dto.Resource
 import jun.watson.model.dto.CharacterResponseDto
 import jun.watson.model.data.ChaosDungeon
 import jun.watson.model.data.Guardian
 import jun.watson.model.data.Raid
+import jun.watson.model.data.RewardCalculator
 
 @Composable
 fun TotalRewardSummary(
@@ -22,193 +33,125 @@ fun TotalRewardSummary(
     excludedStates: Map<String, List<Boolean>>,
     sortedServers: List<String>,
     chaosOption: Int,
-    guardianOption: Int
+    guardianOption: Int,
+    disabledServers: List<String>
 ) {
-    data class ServerRewards(
-        val chaosTradableGold: Double = 0.0,
-        val chaosBoundGold: Double = 0.0,
-        val guardianTradableGold: Double = 0.0,
-        val guardianBoundGold: Double = 0.0,
-        val raidTradableGold: Double = 0.0,
-        val raidBoundGold: Double = 0.0
-    )
+    val calculator = remember(resourceMap, chaosOption, guardianOption) {
+        RewardCalculator(resourceMap, chaosOption, guardianOption)
+    }
 
-    val serverGoldMap = expeditions.mapValues { (server, characters) ->
-        var rewards = ServerRewards()
-        characters.forEachIndexed { index, character ->
-            val isExcluded = excludedStates[server]?.get(index) ?: false
-            if (!isExcluded) {
-                if (chaosOption != 2) {
-                    val chaosReward = ChaosDungeon.getSuitableReward(character.level)
-                    val tradableReward = chaosReward.getChaosTradableReward()
-                    val boundReward = chaosReward.getChaosBoundReward()
+    val totalGold = remember(expeditions, resourceMap, serverCheckedStates, goldRewardStates, excludedStates, sortedServers, chaosOption, guardianOption, disabledServers) {
+        derivedStateOf {
+            var totalTradableGold = 0.0
+            var totalBoundGold = 0.0
+            
+            sortedServers.filter { it !in disabledServers }.forEach { server ->
+                val characters = expeditions[server] ?: return@forEach
+                
+                characters.forEach { character ->
+                    val isExcluded = excludedStates[server]?.get(characters.indexOf(character)) ?: false
                     
-                    var tradableGold = tradableReward.gold.toDouble()
-                    tradableReward.weaponStones.forEach { (item, count) ->
-                        val price = resourceMap[item]?.avgPrice ?: 0.0
-                        tradableGold += count * price
+                    if (!isExcluded) {
+                        val chaosReward = calculator.calculateChaosReward(character, isExcluded)
+                        val guardianReward = calculator.calculateGuardianReward(character, isExcluded)
+                        
+                        totalTradableGold += chaosReward.tradableGold + guardianReward.tradableGold
+                        totalBoundGold += chaosReward.boundGold + guardianReward.boundGold
+                        
+                        val availableRaids = Raid.getAvailableRaids(character.level, 6)
+                        val checkedStates = serverCheckedStates["$server:${character.characterName}"] ?: emptyList()
+                        val isGoldReward = goldRewardStates[server]?.get(characters.indexOf(character)) ?: false
+                        
+                        availableRaids.withIndex()
+                            .filter { checkedStates.getOrNull(it.index) == true }
+                            .forEach { (_, raid) ->
+                                val raidReward = calculator.calculateRaidReward(raid, isGoldReward)
+                                totalTradableGold += raidReward.tradableGold
+                                totalBoundGold += raidReward.boundGold
+                            }
                     }
-                    tradableReward.armorStones.forEach { (item, count) ->
-                        val price = resourceMap[item]?.avgPrice ?: 0.0
-                        tradableGold += count * price
-                    }
-                    tradableReward.jewelries.forEach { (_, count) ->
-                        tradableGold += count
-                    }
-
-                    var boundGold = 0.0
-                    boundReward.shards.forEach { (item, count) ->
-                        val price = resourceMap[item]?.avgPrice ?: 0.0
-                        boundGold += count * price
-                    }
-                    boundReward.leapStones.forEach { (item, count) ->
-                        val price = resourceMap[item]?.avgPrice ?: 0.0
-                        boundGold += count * price
-                    }
-
-                    val weeklyMultiplier = if (chaosOption == 1) 14.0/3.0 else 7.0
-                    rewards = rewards.copy(
-                        chaosTradableGold = rewards.chaosTradableGold + tradableGold * weeklyMultiplier,
-                        chaosBoundGold = rewards.chaosBoundGold + boundGold * weeklyMultiplier
-                    )
                 }
-
-                if (guardianOption != 2) {
-                    val guardianReward = Guardian.getSuitableReward(character.level)
-                    val guardianTradableReward = guardianReward.getGuardianTradableReward()
-                    val guardianBoundReward = guardianReward.getGuardianBoundReward()
-
-                    var guardianTradableGold = guardianTradableReward.gold.toDouble()
-                    guardianTradableReward.weaponStones.forEach { (item, count) ->
-                        val price = resourceMap[item]?.avgPrice ?: 0.0
-                        guardianTradableGold += count * price
-                    }
-                    guardianTradableReward.armorStones.forEach { (item, count) ->
-                        val price = resourceMap[item]?.avgPrice ?: 0.0
-                        guardianTradableGold += count * price
-                    }
-                    guardianTradableReward.leapStones.forEach { (item, count) ->
-                        val price = resourceMap[item]?.avgPrice ?: 0.0
-                        guardianTradableGold += count * price
-                    }
-                    guardianTradableReward.jewelries.forEach { (_, count) ->
-                        guardianTradableGold += count
-                    }
-
-                    var guardianBoundGold = 0.0
-                    guardianBoundReward.shards.forEach { (item, count) ->
-                        val price = resourceMap[item]?.avgPrice ?: 0.0
-                        guardianBoundGold += count * price
-                    }
-
-                    val weeklyMultiplier = if (guardianOption == 1) 14.0/3.0 else 7.0
-                    rewards = rewards.copy(
-                        guardianTradableGold = rewards.guardianTradableGold + guardianTradableGold * weeklyMultiplier,
-                        guardianBoundGold = rewards.guardianBoundGold + guardianBoundGold * weeklyMultiplier
-                    )
-                }
-
-                val availableRaids = Raid.getAvailableRaids(character.level, 6)
-                val checkedStates = serverCheckedStates["$server:${character.characterName}"] ?: emptyList()
-                val isGoldReward = goldRewardStates[server]?.get(index) ?: false
-                availableRaids.withIndex()
-                    .filter { checkedStates.getOrNull(it.index) == true }
-                    .forEach { (_, raid) ->
-                        val reward = if (isGoldReward) raid.getReward(true) else raid.getReward(false)
-                        val raidTradableReward = reward.getRaidTradableReward()
-                        val raidBoundReward = reward.getRaidBoundReward()
-
-                        var raidTradableGold = raidTradableReward.gold.toDouble()
-                        raidTradableReward.jewelries.forEach { (_, count) ->
-                            raidTradableGold += count
-                        }
-
-                        var raidBoundGold = 0.0
-                        raidBoundReward.shards.forEach { (item: Item, count: Int) ->
-                            val price = resourceMap[item]?.avgPrice ?: 0.0
-                            raidBoundGold += count * price
-                        }
-                        raidBoundReward.weaponStones.forEach { (item: Item, count: Int) ->
-                            val price = resourceMap[item]?.avgPrice ?: 0.0
-                            raidBoundGold += count * price
-                        }
-                        raidBoundReward.armorStones.forEach { (item: Item, count: Int) ->
-                            val price = resourceMap[item]?.avgPrice ?: 0.0
-                            raidBoundGold += count * price
-                        }
-                        raidBoundReward.leapStones.forEach { (item: Item, count: Int) ->
-                            val price = resourceMap[item]?.avgPrice ?: 0.0
-                            raidBoundGold += count * price
-                        }
-
-                        rewards = rewards.copy(
-                            raidTradableGold = rewards.raidTradableGold + raidTradableGold,
-                            raidBoundGold = rewards.raidBoundGold + raidBoundGold
-                        )
-                    }
             }
+            Pair(totalTradableGold, totalBoundGold)
         }
-        rewards
     }
 
-    val totalGold = serverGoldMap.values.sumOf { rewards ->
-        rewards.chaosTradableGold + rewards.chaosBoundGold +
-        rewards.guardianTradableGold + rewards.guardianBoundGold +
-        rewards.raidTradableGold + rewards.raidBoundGold
-    }
-
-    Card(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
+            .padding(vertical = 8.dp),
+        shape = RoundedCornerShape(8.dp),
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 4.dp
     ) {
         Column(
-            modifier = Modifier.padding(12.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
         ) {
-            Text(
-                text = "로생 요약: ${"%,.0f".format(totalGold)}G",
-                fontSize = 18.sp,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            sortedServers
-                .filter { server -> 
-                    val rewards = serverGoldMap[server] ?: ServerRewards()
-                    rewards.chaosTradableGold + rewards.chaosBoundGold +
-                    rewards.guardianTradableGold + rewards.guardianBoundGold +
-                    rewards.raidTradableGold + rewards.raidBoundGold > 0 
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.gold),
+                        contentDescription = "골드",
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Text(
+                        text = "총합",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
-                .forEach { server ->
-                    val rewards = serverGoldMap[server] ?: ServerRewards()
-                    val serverTotal = rewards.chaosTradableGold + rewards.chaosBoundGold +
-                                     rewards.guardianTradableGold + rewards.guardianBoundGold +
-                                     rewards.raidTradableGold + rewards.raidBoundGold
-                    
-                    val serverTradableGold = rewards.chaosTradableGold + 
-                                            rewards.guardianTradableGold + 
-                                            rewards.raidTradableGold
-                    
-                    val serverBoundGold = rewards.chaosBoundGold + 
-                                         rewards.guardianBoundGold + 
-                                         rewards.raidBoundGold
-                    
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.Start
+                ) {
                     Text(
-                        text = "$server: ${"%,.0f".format(serverTotal)}G",
-                        fontSize = 15.sp,
-                        color = MaterialTheme.colorScheme.primary
+                        text = "거래 가능",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
                     Text(
-                        text = "  - 거래 가능: ${"%,.0f".format(serverTradableGold)}G",
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.primary
+                        text = "${"%,.0f".format(totalGold.value.first)}G",
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
                     )
-                    Text(
-                        text = "  - 귀속: ${"%,.0f".format(serverBoundGold)}G",
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
                 }
+                
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.End
+                ) {
+                    Text(
+                        text = "귀속",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    )
+                    Text(
+                        text = "${"%,.0f".format(totalGold.value.second)}G",
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.secondary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
         }
     }
 } 
