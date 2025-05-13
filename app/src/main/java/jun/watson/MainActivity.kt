@@ -22,6 +22,8 @@ class MainActivity : ComponentActivity() {
         // 상태바와 네비게이션바를 투명하게 설정
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
+        val errorMessage = intent.getStringExtra("error")
+
         setContent {
             MaterialTheme(
                 colorScheme = MaterialTheme.colorScheme.copy(
@@ -61,6 +63,14 @@ class MainActivity : ComponentActivity() {
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
+                            if (errorMessage != null) {
+                                Text(
+                                    text = errorMessage,
+                                    color = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.padding(bottom = 8.dp)
+                                )
+                            }
+
                             OutlinedTextField(
                                 value = nickname,
                                 onValueChange = { nickname = it },

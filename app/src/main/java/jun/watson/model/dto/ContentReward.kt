@@ -42,4 +42,58 @@ data class ContentReward(
         }
     }
 
+    // 레이드의 거래 가능 재화
+    fun getRaidTradableReward(): ContentReward {
+        return ContentReward(
+            gold = gold,
+            jewelries = jewelries
+        )
+    }
+
+    // 레이드의 귀속 재화
+    fun getRaidBoundReward(): ContentReward {
+        return ContentReward(
+            leapStones = leapStones,
+            weaponStones = weaponStones,
+            armorStones = armorStones,
+            shards = shards
+        )
+    }
+
+    // 카오스 던전의 거래 가능 재화
+    fun getChaosTradableReward(): ContentReward {
+        return ContentReward(
+            gold = gold,
+            weaponStones = weaponStones,
+            armorStones = armorStones,
+            jewelries = jewelries
+        )
+    }
+
+    // 카오스 던전의 귀속 재화
+    fun getChaosBoundReward(): ContentReward {
+        return ContentReward(
+            leapStones = leapStones,
+            shards = shards
+        )
+    }
+
+    // 가디언 토벌의 거래 가능 재화
+    fun getGuardianTradableReward(): ContentReward {
+        return ContentReward(
+            gold = gold,
+            weaponStones = weaponStones,
+            armorStones = armorStones,
+            leapStones = leapStones,
+            jewelries = jewelries
+        )
+    }
+
+    // 가디언 토벌의 귀속 재화
+    fun getGuardianBoundReward(): ContentReward {
+        return ContentReward(
+            shards = shards
+        )
+    }
+
 }
