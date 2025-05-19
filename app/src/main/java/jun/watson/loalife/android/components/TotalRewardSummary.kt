@@ -1,4 +1,4 @@
-package jun.watson.components
+package jun.watson.loalife.android.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -16,13 +16,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import jun.watson.R
-import jun.watson.model.data.Item
-import jun.watson.model.dto.Resource
-import jun.watson.model.dto.CharacterResponseDto
-import jun.watson.model.data.ChaosDungeon
-import jun.watson.model.data.Guardian
-import jun.watson.model.data.Raid
-import jun.watson.model.data.RewardCalculator
+import jun.watson.loalife.android.model.data.Item
+import jun.watson.loalife.android.model.dto.Resource
+import jun.watson.loalife.android.model.dto.CharacterResponseDto
+import jun.watson.loalife.android.model.data.ChaosDungeon
+import jun.watson.loalife.android.model.data.Guardian
+import jun.watson.loalife.android.model.data.Raid
+import jun.watson.loalife.android.model.data.RewardCalculator
 
 @Composable
 fun TotalRewardSummary(
@@ -34,29 +34,36 @@ fun TotalRewardSummary(
     sortedServers: List<String>,
     chaosOption: Int,
     guardianOption: Int,
-    disabledServers: List<String>
+    disabledServers: List<String>,
+    showTradableOnly: Boolean
 ) {
-    val calculator = remember(resourceMap, chaosOption, guardianOption) {
-        RewardCalculator(resourceMap, chaosOption, guardianOption)
-    }
-
-    val totalGold = remember(expeditions, resourceMap, serverCheckedStates, goldRewardStates, excludedStates, sortedServers, chaosOption, guardianOption, disabledServers) {
-        derivedStateOf {
-            var totalTradableGold = 0.0
-            var totalBoundGold = 0.0
-            
-            sortedServers.filter { it !in disabledServers }.forEach { server ->
-                val characters = expeditions[server] ?: return@forEach
-                
+    val totalReward = remember(
+        expeditions,
+        resourceMap,
+        serverCheckedStates.toMap(),
+        goldRewardStates.toMap(),
+        excludedStates.toMap(),
+        sortedServers,
+        chaosOption,
+        guardianOption,
+        disabledServers,
+        showTradableOnly
+    ) {
+        var tradableGold = 0.0
+        var boundGold = 0.0
+        
+        expeditions.forEach { (server, characters) ->
+            if (server !in disabledServers) {
                 characters.forEach { character ->
                     val isExcluded = excludedStates[server]?.get(characters.indexOf(character)) ?: false
                     
                     if (!isExcluded) {
+                        val calculator = RewardCalculator(resourceMap, chaosOption, guardianOption)
                         val chaosReward = calculator.calculateChaosReward(character, isExcluded)
                         val guardianReward = calculator.calculateGuardianReward(character, isExcluded)
                         
-                        totalTradableGold += chaosReward.tradableGold + guardianReward.tradableGold
-                        totalBoundGold += chaosReward.boundGold + guardianReward.boundGold
+                        tradableGold += chaosReward.tradableGold + guardianReward.tradableGold
+                        boundGold += chaosReward.boundGold + guardianReward.boundGold
                         
                         val availableRaids = Raid.getAvailableRaids(character.level, 6)
                         val checkedStates = serverCheckedStates["$server:${character.characterName}"] ?: emptyList()
@@ -66,13 +73,18 @@ fun TotalRewardSummary(
                             .filter { checkedStates.getOrNull(it.index) == true }
                             .forEach { (_, raid) ->
                                 val raidReward = calculator.calculateRaidReward(raid, isGoldReward)
-                                totalTradableGold += raidReward.tradableGold
-                                totalBoundGold += raidReward.boundGold
+                                tradableGold += raidReward.tradableGold
+                                boundGold += raidReward.boundGold
                             }
                     }
                 }
             }
-            Pair(totalTradableGold, totalBoundGold)
+        }
+        
+        if (showTradableOnly) {
+            Pair(tradableGold, 0.0)
+        } else {
+            Pair(tradableGold, boundGold)
         }
     }
 
@@ -128,7 +140,7 @@ fun TotalRewardSummary(
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
                     Text(
-                        text = "${"%,.0f".format(totalGold.value.first)}G",
+                        text = "${"%,.0f".format(totalReward.first)}G",
                         fontSize = 16.sp,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
@@ -145,7 +157,7 @@ fun TotalRewardSummary(
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
                     Text(
-                        text = "${"%,.0f".format(totalGold.value.second)}G",
+                        text = "${"%,.0f".format(totalReward.second)}G",
                         fontSize = 16.sp,
                         color = MaterialTheme.colorScheme.secondary,
                         fontWeight = FontWeight.Bold

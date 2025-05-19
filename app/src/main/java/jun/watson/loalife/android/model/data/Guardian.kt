@@ -1,7 +1,7 @@
-package jun.watson.model.data
+package jun.watson.loalife.android.model.data
 
-import jun.watson.model.data.Item.*
-import jun.watson.model.dto.ContentReward
+import jun.watson.loalife.android.model.data.Item.*
+import jun.watson.loalife.android.model.dto.ContentReward
 
 enum class Guardian(
     private val minimumLevel: Int,

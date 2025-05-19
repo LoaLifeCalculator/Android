@@ -1,8 +1,8 @@
-package jun.watson.model.data
+package jun.watson.loalife.android.model.data
 
-import jun.watson.model.dto.CharacterResponseDto
-import jun.watson.model.dto.ContentReward
-import jun.watson.model.dto.Resource
+import jun.watson.loalife.android.model.dto.CharacterResponseDto
+import jun.watson.loalife.android.model.dto.ContentReward
+import jun.watson.loalife.android.model.dto.Resource
 
 class RewardCalculator(
     private val resourceMap: Map<Item, Resource>,
@@ -73,8 +73,14 @@ class RewardCalculator(
             sum += count * price
         }
         
-        reward.jewelries.forEach { (_, count) ->
-            sum += count
+        reward.gems.forEach { (tier, count) ->
+            val gemItem = when (tier) {
+                3 -> Item.GEM_TIER_3
+                4 -> Item.GEM_TIER_4
+                else -> null
+            }
+            val price = gemItem?.let { resourceMap[it]?.avgPrice } ?: 0.0
+            sum += count * price
         }
 
         return sum

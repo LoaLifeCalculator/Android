@@ -1,7 +1,9 @@
-package jun.watson.model.data
+package jun.watson.loalife.android.model.data
 
-import jun.watson.model.data.CategoryCode.*
+import jun.watson.loalife.android.model.data.CategoryCode.*
 import kotlinx.serialization.Serializable
+
+const val DEFAULT_ID = 0
 
 @Serializable
 enum class Item(
@@ -97,6 +99,19 @@ enum class Item(
         66110222,
         REFINING_ADDITIONAL_MATERIAL,
         1
-    )
+    ),
+
+    GEM_TIER_3(
+        "1레벨 멸화의 보석",
+        DEFAULT_ID,
+        GEM,
+        1,
+    ),
+    GEM_TIER_4(
+        "1레벨 겁화의 보석",
+        DEFAULT_ID,
+        GEM,
+        1,
+    );
 
 }

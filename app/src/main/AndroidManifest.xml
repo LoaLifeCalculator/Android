@@ -17,7 +17,7 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
-            android:name=".MainActivity"
+            android:name=".loalife.android.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.Android">
@@ -28,7 +28,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ResultActivity"
+            android:name=".loalife.android.ResultActivity"
             android:exported="false"
             android:theme="@style/Theme.Android" />
     </application>

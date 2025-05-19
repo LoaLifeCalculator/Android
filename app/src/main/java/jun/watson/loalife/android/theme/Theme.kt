@@ -1,4 +1,4 @@
-package jun.watson.ui.theme
+package jun.watson.loalife.android.theme
 
 import android.app.Activity
 import android.os.Build

@@ -1,4 +1,4 @@
-package jun.watson.components
+package jun.watson.loalife.android.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.*

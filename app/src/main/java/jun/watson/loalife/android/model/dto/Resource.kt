@@ -1,6 +1,6 @@
-package jun.watson.model.dto
+package jun.watson.loalife.android.model.dto
 
-import jun.watson.model.data.Item
+import jun.watson.loalife.android.model.data.Item
 import kotlinx.serialization.Serializable
 
 @Serializable

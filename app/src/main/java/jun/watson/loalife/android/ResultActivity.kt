@@ -1,4 +1,4 @@
-package jun.watson
+package jun.watson.loalife.android
 
 import jun.watson.BuildConfig
 import android.os.Bundle
@@ -10,9 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import io.ktor.client.*
 import io.ktor.client.engine.android.*
@@ -22,9 +20,9 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
-import jun.watson.model.dto.SearchResponseDto
+import jun.watson.loalife.android.model.dto.SearchResponseDto
 import kotlinx.serialization.json.Json
-import jun.watson.components.ResultContent
+import jun.watson.loalife.android.components.ResultContent
 
 class ResultActivity : ComponentActivity() {
     private val client = HttpClient(Android) {

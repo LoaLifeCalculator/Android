@@ -1,6 +1,6 @@
-package jun.watson.model.dto
+package jun.watson.loalife.android.model.dto
 
-import jun.watson.model.data.Item
+import jun.watson.loalife.android.model.data.Item
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -10,7 +10,7 @@ data class ContentReward(
     val weaponStones: Map<Item, Int> = emptyMap(), // 파강
     val armorStones: Map<Item, Int> = emptyMap(), // 수강
     val shards: Map<Item, Int> = emptyMap(), // 명파
-    val jewelries: Map<Int, Double> = emptyMap(), // 보석 <티어, 수량>
+    val gems: Map<Int, Double> = emptyMap(), // 보석 <티어, 수량>
 ) {
 
     operator fun plus(other: ContentReward): ContentReward {
@@ -20,7 +20,7 @@ data class ContentReward(
             weaponStones = mergeMapsInt(weaponStones, other.weaponStones),
             armorStones = mergeMapsInt(armorStones, other.armorStones),
             shards = mergeMapsInt(shards, other.shards),
-            jewelries = mergeMapsDouble(jewelries, other.jewelries)
+            gems = mergeMapsDouble(gems, other.gems)
         )
     }
 
@@ -46,7 +46,7 @@ data class ContentReward(
     fun getRaidTradableReward(): ContentReward {
         return ContentReward(
             gold = gold,
-            jewelries = jewelries
+            gems = gems
         )
     }
 
@@ -66,7 +66,7 @@ data class ContentReward(
             gold = gold,
             weaponStones = weaponStones,
             armorStones = armorStones,
-            jewelries = jewelries
+            gems = gems
         )
     }
 
@@ -85,7 +85,7 @@ data class ContentReward(
             weaponStones = weaponStones,
             armorStones = armorStones,
             leapStones = leapStones,
-            jewelries = jewelries
+            gems = gems
         )
     }
 

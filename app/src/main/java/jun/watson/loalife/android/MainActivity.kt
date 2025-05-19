@@ -1,4 +1,4 @@
-package jun.watson
+package jun.watson.loalife.android
 
 import android.content.Intent
 import android.os.Bundle

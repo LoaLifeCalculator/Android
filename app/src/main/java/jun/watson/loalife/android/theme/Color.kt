@@ -1,4 +1,4 @@
-package jun.watson.ui.theme
+package jun.watson.loalife.android.theme
 
 import androidx.compose.ui.graphics.Color
 

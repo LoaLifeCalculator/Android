@@ -26,3 +26,7 @@ keystore.properties
 
 # (선택) dotenv 파일
 .env
+
+# signing keys
+/app/my-release-key.jks
+/key.properties

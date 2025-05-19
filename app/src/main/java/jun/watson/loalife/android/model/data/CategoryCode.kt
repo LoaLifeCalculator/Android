@@ -1,4 +1,4 @@
-package jun.watson.model.data
+package jun.watson.loalife.android.model.data
 
 import kotlinx.serialization.Serializable
 
@@ -61,6 +61,7 @@ enum class CategoryCode(val value: Int, val codeName: String) {
 
     ETC(170000, "기타"),
 
+    GEM(210000, "보석"),
     GEM_BOX(220000, "보석 상자")
 
 }

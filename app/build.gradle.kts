@@ -1,4 +1,6 @@
 import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
+import java.util.Properties
+import java.io.FileInputStream
 
 plugins {
     alias(libs.plugins.android.application)
@@ -10,6 +12,24 @@ plugins {
 android {
     namespace = "jun.watson"
     compileSdk = 35
+
+    // local.properties에서 keystore 정보 읽어오기
+    val keystoreProps = Properties().apply {
+        val propsFile = rootProject.file("local.properties")
+        if (propsFile.exists()) {
+            load(FileInputStream(propsFile))
+        }
+    }
+
+    // release용 signingConfigs 정의
+    signingConfigs {
+        create("release") {
+            storeFile     = file(keystoreProps["KEYSTORE_PATH"]    as String)
+            storePassword = keystoreProps["KEYSTORE_PASSWORD"]     as String
+            keyAlias      = keystoreProps["KEY_ALIAS"]             as String
+            keyPassword   = keystoreProps["KEY_PASSWORD"]          as String
+        }
+    }
 
     // 프로젝트 루트의 local.properties를 읽어오는 유틸
     val localProps = gradleLocalProperties(rootDir, providers)
@@ -43,6 +63,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
