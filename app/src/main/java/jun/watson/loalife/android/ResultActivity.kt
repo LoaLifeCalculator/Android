@@ -22,6 +22,7 @@ import jun.watson.loalife.android.model.dto.SearchResponseDto
 import kotlinx.serialization.json.Json
 import jun.watson.loalife.android.components.ResultContent
 import jun.watson.loalife.android.components.Footer
+import kotlinx.coroutines.launch
 
 class ResultActivity : ComponentActivity() {
     private val client = HttpClient(Android) {
@@ -42,6 +43,68 @@ class ResultActivity : ComponentActivity() {
         isLenient = true
     }
 
+    private suspend fun fetchCharacterData(nickname: String): Result<SearchResponseDto> {
+        return try {
+            android.util.Log.d("ResultActivity", "Starting API call for nickname: $nickname")
+            val response = client.get(BuildConfig.SEARCH_URL) {
+                url {
+                    parameters.append("name", nickname)
+                }
+                headers {
+                    append("accept", "application/json")
+                }
+            }
+            
+            android.util.Log.d("ResultActivity", "API call completed with status: ${response.status}")
+            
+            if (response.status == HttpStatusCode.OK) {
+                val responseBody = response.bodyAsText()
+                android.util.Log.d("ResultActivity", "API Response body: $responseBody")
+                
+                try {
+                    val searchResponse = json.decodeFromString<SearchResponseDto>(responseBody)
+                    validateSearchResponse(searchResponse)
+                    Result.success(searchResponse)
+                } catch (e: Exception) {
+                    android.util.Log.e("ResultActivity", "Failed to parse response: ${e.message}", e)
+                    android.util.Log.e("ResultActivity", "Response body was: $responseBody")
+                    Result.failure(e)
+                }
+            } else {
+                android.util.Log.e("ResultActivity", "API call failed with status: ${response.status}")
+                android.util.Log.e("ResultActivity", "Response body: ${response.bodyAsText()}")
+                Result.failure(Exception("API call failed with status: ${response.status}"))
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("ResultActivity", "Exception during API call: ${e.message}", e)
+            android.util.Log.e("ResultActivity", "Stack trace: ${e.stackTraceToString()}")
+            Result.failure(e)
+        }
+    }
+
+    private fun validateSearchResponse(response: SearchResponseDto): Boolean {
+        if (response.expeditions?.expeditions == null) {
+            android.util.Log.e("ResultActivity", "Expeditions is null in response")
+            return false
+        }
+        if (response.expeditions.expeditions.isEmpty()) {
+            android.util.Log.e("ResultActivity", "Expeditions map is empty")
+            return false
+        }
+        val serverCount = response.expeditions.expeditions.size
+        val characterCount = response.expeditions.expeditions.values.sumOf { it.size }
+        android.util.Log.d("ResultActivity", "Found $serverCount servers with $characterCount characters")
+        return true
+    }
+
+    private fun handleError(error: Throwable) {
+        val intent = Intent(this, MainActivity::class.java).apply {
+            putExtra("error", "캐릭터 조회에 실패했습니다")
+        }
+        startActivity(intent)
+        finish()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val nickname = intent.getStringExtra("nickname") ?: ""
@@ -56,70 +119,13 @@ class ResultActivity : ComponentActivity() {
 
             LaunchedEffect(nickname) {
                 try {
-                    android.util.Log.d("ResultActivity", "Starting API call for nickname: $nickname")
-                    val response = client.get(BuildConfig.SEARCH_URL) {
-                        url {
-                            parameters.append("name", nickname)
+                    fetchCharacterData(nickname)
+                        .onSuccess { response ->
+                            searchResponse = response
                         }
-                        headers {
-                            append("accept", "application/json")
+                        .onFailure { e ->
+                            handleError(e)
                         }
-                    }
-                    android.util.Log.d("ResultActivity", "API call completed with status: ${response.status}")
-                    
-                    if (response.status == HttpStatusCode.OK) {
-                        val responseBody = response.bodyAsText()
-                        android.util.Log.d("ResultActivity", "API Response body: $responseBody")
-                        
-                        try {
-                            searchResponse = json.decodeFromString(responseBody)
-                            android.util.Log.d("ResultActivity", "Successfully parsed response")
-                            
-                            if (searchResponse?.expeditions?.expeditions == null) {
-                                android.util.Log.e("ResultActivity", "Expeditions is null in response")
-                                val intent = Intent(this@ResultActivity, MainActivity::class.java).apply {
-                                    putExtra("error", "캐릭터 조회에 실패했습니다")
-                                }
-                                startActivity(intent)
-                                finish()
-                            } else if (searchResponse?.expeditions?.expeditions?.isEmpty() == true) {
-                                android.util.Log.e("ResultActivity", "Expeditions map is empty")
-                                val intent = Intent(this@ResultActivity, MainActivity::class.java).apply {
-                                    putExtra("error", "캐릭터 조회에 실패했습니다")
-                                }
-                                startActivity(intent)
-                                finish()
-                            } else {
-                                val serverCount = searchResponse?.expeditions?.expeditions?.size ?: 0
-                                val characterCount = searchResponse?.expeditions?.expeditions?.values?.sumOf { it.size } ?: 0
-                                android.util.Log.d("ResultActivity", "Found $serverCount servers with $characterCount characters")
-                            }
-                        } catch (e: Exception) {
-                            android.util.Log.e("ResultActivity", "Failed to parse response: ${e.message}", e)
-                            android.util.Log.e("ResultActivity", "Response body was: $responseBody")
-                            val intent = Intent(this@ResultActivity, MainActivity::class.java).apply {
-                                putExtra("error", "캐릭터 조회에 실패했습니다")
-                            }
-                            startActivity(intent)
-                            finish()
-                        }
-                    } else {
-                        android.util.Log.e("ResultActivity", "API call failed with status: ${response.status}")
-                        android.util.Log.e("ResultActivity", "Response body: ${response.bodyAsText()}")
-                        val intent = Intent(this@ResultActivity, MainActivity::class.java).apply {
-                            putExtra("error", "캐릭터 조회에 실패했습니다")
-                        }
-                        startActivity(intent)
-                        finish()
-                    }
-                } catch (e: Exception) {
-                    android.util.Log.e("ResultActivity", "Exception during API call: ${e.message}", e)
-                    android.util.Log.e("ResultActivity", "Stack trace: ${e.stackTraceToString()}")
-                    val intent = Intent(this@ResultActivity, MainActivity::class.java).apply {
-                        putExtra("error", "캐릭터 조회에 실패했습니다")
-                    }
-                    startActivity(intent)
-                    finish()
                 } finally {
                     isLoading = false
                 }
