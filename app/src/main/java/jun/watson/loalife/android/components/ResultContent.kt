@@ -695,11 +695,6 @@ fun ResultContent(
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        Text(
-                            text = "레벨이 일정 이하인 캐릭터는 목록에서 제외됩니다.",
-                            fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
                     }
                 }
             }
