@@ -666,11 +666,6 @@ fun ResultContent(
                         modifier = Modifier.padding(16.dp)
                     ) {
                         Text(
-                            text = "캐릭터 카드를 클릭하면 각 캐릭터의 상세 수급량을 확인할 수 있습니다.",
-                            fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
                             text = "다양한 검색 설정은 '필터 및 도구' 탭에서 적용할 수 있습니다.",
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onSurface
