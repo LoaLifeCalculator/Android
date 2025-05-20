@@ -1,28 +1,36 @@
 package jun.watson.loalife.android
 
-import jun.watson.BuildConfig
-import android.os.Bundle
 import android.content.Intent
+import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
-import io.ktor.client.*
-import io.ktor.client.engine.android.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.plugins.logging.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.android.Android
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.request.get
+import io.ktor.client.request.headers
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.HttpStatusCode
+import io.ktor.serialization.kotlinx.json.json
+import jun.watson.BuildConfig
+import jun.watson.loalife.android.components.Footer
+import jun.watson.loalife.android.components.ResultContent
 import jun.watson.loalife.android.model.dto.SearchResponseDto
 import kotlinx.serialization.json.Json
-import jun.watson.loalife.android.components.ResultContent
-import jun.watson.loalife.android.components.Footer
-import kotlinx.coroutines.launch
 
 class ResultActivity : ComponentActivity() {
     private val client = HttpClient(Android) {
