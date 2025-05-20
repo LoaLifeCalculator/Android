@@ -31,6 +31,10 @@
             android:name=".loalife.android.ResultActivity"
             android:exported="false"
             android:theme="@style/Theme.Android" />
+        <activity
+            android:name=".loalife.android.ContentRewardActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Android" />
     </application>
 
 </manifest>

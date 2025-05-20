@@ -4,8 +4,8 @@ import jun.watson.loalife.android.model.data.Item.*
 import jun.watson.loalife.android.model.dto.ContentReward
 
 enum class Guardian(
-    private val minimumLevel: Int,
-    private val reward: ContentReward
+    val minimumLevel: Int,
+    val reward: ContentReward
 ) {
 
     DRECTALAS(

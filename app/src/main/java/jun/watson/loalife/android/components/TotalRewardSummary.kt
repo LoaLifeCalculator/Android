@@ -46,7 +46,7 @@ fun TotalRewardSummary(
         sortedServers,
         chaosOption,
         guardianOption,
-        disabledServers,
+        disabledServers.toList(),
         showTradableOnly
     ) {
         var tradableGold = 0.0

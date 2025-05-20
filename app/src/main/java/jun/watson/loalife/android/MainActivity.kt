@@ -4,16 +4,22 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
+import jun.watson.R
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -92,6 +98,36 @@ class MainActivity : ComponentActivity() {
                             ) {
                                 Text("검색")
                             }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Button(
+                                onClick = {
+                                    val intent = Intent(this@MainActivity, ContentRewardActivity::class.java)
+                                    startActivity(intent)
+                                },
+                                modifier = Modifier
+                                    .size(120.dp)
+                                    .align(Alignment.CenterHorizontally),
+                                shape = RoundedCornerShape(16.dp)
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Image(
+                                        painter = painterResource(id = R.drawable.reward),
+                                        contentDescription = "컨텐츠 보상",
+                                        modifier = Modifier.size(32.dp),
+                                        colorFilter = ColorFilter.tint(Color.White)
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = "컨텐츠\n보상 보기",
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -148,6 +184,33 @@ fun AppAndroidPreview() {
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("검색")
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = { },
+                        modifier = Modifier
+                            .size(120.dp)
+                            .align(Alignment.CenterHorizontally),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.reward),
+                                contentDescription = "컨텐츠 보상",
+                                modifier = Modifier.size(32.dp),
+                                colorFilter = ColorFilter.tint(Color.White)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "컨텐츠\n보상 보기",
+                                textAlign = TextAlign.Center
+                            )
+                        }
                     }
                 }
             }

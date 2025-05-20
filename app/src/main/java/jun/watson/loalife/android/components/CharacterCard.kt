@@ -53,9 +53,9 @@ fun CharacterCard(
                 var tradableGold = chaosReward.tradableGold + guardianReward.tradableGold
                 var boundGold = chaosReward.boundGold + guardianReward.boundGold
                 
-                val availableRaids = Raid.getAvailableRaids(character.level, 6)
-                availableRaids.withIndex()
-                    .filter { checkedStates.getOrNull(it.index) == true }
+        val availableRaids = Raid.getAvailableRaids(character.level, 6)
+        availableRaids.withIndex()
+            .filter { checkedStates.getOrNull(it.index) == true }
                     .forEach { (_, raid) ->
                         val raidReward = calculator.calculateRaidReward(raid, goldRewardState)
                         tradableGold += raidReward.tradableGold
@@ -268,7 +268,7 @@ fun CharacterCard(
                         }
                     }
 
-                    val raidColor = Color(0xFFB85555)
+                        val raidColor = Color(0xFFB85555)
                     var raidTradableGold = 0.0
                     var raidBoundGold = 0.0
                     val availableRaids = Raid.getAvailableRaids(character.level, 6)
@@ -280,7 +280,7 @@ fun CharacterCard(
                             raidBoundGold += raidReward.boundGold
                         }
 
-                    if (raidTradableGold > 0 || (!showTradableOnly && raidBoundGold > 0)) {
+                    if (!excludedState && (raidTradableGold > 0 || (!showTradableOnly && raidBoundGold > 0))) {
                         Text(
                             text = "레이드 총 보상: ${"%,.0f".format(if (showTradableOnly) raidTradableGold else raidTradableGold + raidBoundGold)}G",
                             fontSize = 16.sp,
@@ -289,16 +289,16 @@ fun CharacterCard(
                         if (raidTradableGold > 0) {
                             Text(
                                 text = "  - 거래 가능: ${"%,.0f".format(raidTradableGold)}G",
-                                fontSize = 14.sp,
-                                color = raidColor
-                            )
-                        }
+                                    fontSize = 14.sp,
+                                    color = raidColor
+                                )
+                            }
                         if (!showTradableOnly && raidBoundGold > 0) {
-                            Text(
+                                Text(
                                 text = "  - 귀속: ${"%,.0f".format(raidBoundGold)}G",
-                                fontSize = 14.sp,
-                                color = raidColor
-                            )
+                                    fontSize = 14.sp,
+                                    color = raidColor
+                                )
                         }
                     }
 

@@ -6,8 +6,6 @@ import android.content.Intent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -23,6 +21,7 @@ import io.ktor.serialization.kotlinx.json.*
 import jun.watson.loalife.android.model.dto.SearchResponseDto
 import kotlinx.serialization.json.Json
 import jun.watson.loalife.android.components.ResultContent
+import jun.watson.loalife.android.components.Footer
 
 class ResultActivity : ComponentActivity() {
     private val client = HttpClient(Android) {
@@ -135,16 +134,9 @@ class ResultActivity : ComponentActivity() {
             ) {
                 Scaffold(
                     bottomBar = {
-                        NavigationBar {
-                            NavigationBarItem(
-                                selected = false,
-                                onClick = {
-                                    finish()
-                                },
-                                icon = { Icon(Icons.Default.Home, contentDescription = "홈") },
-                                label = { Text("홈") }
-                            )
-                        }
+                        Footer(
+                            onHomeClick = { finish() }
+                        )
                     }
                 ) { innerPadding ->
                     Box(modifier = Modifier.padding(innerPadding)) {

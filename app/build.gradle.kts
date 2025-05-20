@@ -35,6 +35,7 @@ android {
     val localProps = gradleLocalProperties(rootDir, providers)
     // 키가 없으면 "undefined"를 기본값으로 사용
     val searchUrl: String = localProps.getProperty("SEARCH_URL", "undefined")
+    val resourceUrl: String = localProps.getProperty("RESOURCE_URL", "undefined")
 
     buildFeatures {
         // BuildConfig에 커스텀 필드를 넣을 수 있게 허용
@@ -54,6 +55,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField("String", "SEARCH_URL", "\"$searchUrl\"")
+        buildConfigField("String", "RESOURCE_URL", "\"$resourceUrl\"")
     }
 
     buildTypes {

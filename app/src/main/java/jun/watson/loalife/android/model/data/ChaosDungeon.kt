@@ -9,8 +9,8 @@ import jun.watson.loalife.android.model.dto.ContentReward
  * 참고자료 3: https://jungbla.tistory.com/118
  */
 enum class ChaosDungeon(
-    private val minimumLevel: Int,
-    private val reward: ContentReward
+    val minimumLevel: Int,
+    val reward: ContentReward
 ) {
 
     C1700(

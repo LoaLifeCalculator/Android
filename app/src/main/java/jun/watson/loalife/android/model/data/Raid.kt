@@ -5,7 +5,7 @@ import jun.watson.loalife.android.model.dto.ContentReward
 
 enum class Raid(
     val korean: String,
-    private val minimumLevel: Int,
+    val minimumLevel: Int,
     private val raidName: String,
     private val goldReward: ContentReward,
     private val nonGoldReward: ContentReward
