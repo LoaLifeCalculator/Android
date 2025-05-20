@@ -39,6 +39,9 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.ui.zIndex
 import jun.watson.loalife.android.model.data.RewardCalculator
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -469,6 +472,18 @@ fun ResultContent(
                         .padding(horizontal = 8.dp),
                     singleLine = true,
                     placeholder = { Text("닉네임을 입력하세요") },
+                    keyboardOptions = KeyboardOptions(
+                        imeAction = ImeAction.Search
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onSearch = {
+                            val intent = Intent(context, ResultActivity::class.java).apply {
+                                putExtra("nickname", searchText)
+                            }
+                            context.startActivity(intent)
+                            (context as? ResultActivity)?.finish()
+                        }
+                    ),
                     trailingIcon = {
                         IconButton(
                             onClick = {

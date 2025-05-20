@@ -24,6 +24,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,197 +38,123 @@ class MainActivity : ComponentActivity() {
         val errorMessage = intent.getStringExtra("error")
 
         setContent {
-            MaterialTheme(
-                colorScheme = MaterialTheme.colorScheme.copy(
-                    primary = MaterialTheme.colorScheme.primary,
-                    secondary = MaterialTheme.colorScheme.secondary,
-                    background = MaterialTheme.colorScheme.background
-                )
-            ) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp)
-                    ) {
-                        Text(
-                            text = "로생 계산기",
-                            style = TextStyle(
-                                fontSize = 36.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Default,
-                                color = MaterialTheme.colorScheme.primary,
-                                shadow = Shadow(
-                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                                    blurRadius = 3f
-                                )
-                            ),
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier
-                                .align(Alignment.TopCenter)
-                                .padding(top = 24.dp)
-                        )
-
-                        var nickname by remember { mutableStateOf("") }
-
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 32.dp)
-                                .align(Alignment.Center),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            if (errorMessage != null) {
-                                Text(
-                                    text = errorMessage,
-                                    color = MaterialTheme.colorScheme.error,
-                                    modifier = Modifier.padding(bottom = 8.dp)
-                                )
-                            }
-
-                            OutlinedTextField(
-                                value = nickname,
-                                onValueChange = { nickname = it },
-                                label = { Text("닉네임을 입력하세요") },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true
-                            )
-
-                            Button(
-                                onClick = {
-                                    if (nickname.isNotBlank()) {
-                                        val intent = Intent(this@MainActivity, ResultActivity::class.java).apply {
-                                            putExtra("nickname", nickname)
-                                        }
-                                        startActivity(intent)
-                                    }
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text("검색")
-                            }
-                        }
-
-                        Button(
-                            onClick = {
-                                val intent = Intent(this@MainActivity, ContentRewardActivity::class.java)
-                                startActivity(intent)
-                            },
-                            modifier = Modifier
-                                .size(120.dp)
-                                .align(Alignment.BottomStart)
-                                .padding(start = 16.dp, bottom = 16.dp),
-                            shape = RoundedCornerShape(16.dp)
-                        ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.reward),
-                                    contentDescription = "컨텐츠 보상",
-                                    modifier = Modifier.size(32.dp),
-                                    colorFilter = ColorFilter.tint(Color.White)
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = "컨텐츠\n보상 보기",
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-                        }
+            MaterialTheme {
+                MainScreen(errorMessage) { nickname ->
+                    val intent = Intent(this, ResultActivity::class.java).apply {
+                        putExtra("nickname", nickname)
                     }
+                    startActivity(intent)
                 }
             }
         }
     }
 }
 
-@Preview
 @Composable
-fun AppAndroidPreview() {
-    MaterialTheme {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
+fun MainScreen(
+    errorMessage: String?,
+    onSearch: (String) -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
-            ) {
-                Text(
-                    text = "로생 계산기",
-                    style = TextStyle(
-                        fontSize = 36.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Default,
-                        color = MaterialTheme.colorScheme.primary,
-                        shadow = Shadow(
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                            blurRadius = 3f
-                        )
-                    ),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .padding(top = 24.dp)
-                )
-
-                var nickname by remember { mutableStateOf("") }
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 32.dp)
-                        .align(Alignment.Center),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = nickname,
-                        onValueChange = { nickname = it },
-                        label = { Text("닉네임을 입력하세요") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
+            Text(
+                text = "로생 계산기",
+                style = TextStyle(
+                    fontSize = 36.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Default,
+                    color = MaterialTheme.colorScheme.primary,
+                    shadow = Shadow(
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                        blurRadius = 3f
                     )
+                ),
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 24.dp)
+            )
 
-                    Button(
-                        onClick = { },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("검색")
-                    }
+            var nickname by remember { mutableStateOf("") }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 32.dp)
+                    .align(Alignment.Center),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (errorMessage != null) {
+                    Text(
+                        text = errorMessage,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
                 }
 
+                OutlinedTextField(
+                    value = nickname,
+                    onValueChange = { nickname = it },
+                    label = { Text("닉네임을 입력하세요") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        imeAction = ImeAction.Search
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onSearch = {
+                            if (nickname.isNotBlank()) {
+                                onSearch(nickname)
+                            }
+                        }
+                    )
+                )
+
                 Button(
-                    onClick = { },
-                    modifier = Modifier
-                        .size(120.dp)
-                        .align(Alignment.BottomStart)
-                        .padding(start = 16.dp, bottom = 16.dp),
-                    shape = RoundedCornerShape(16.dp)
+                    onClick = {
+                        if (nickname.isNotBlank()) {
+                            onSearch(nickname)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.reward),
-                            contentDescription = "컨텐츠 보상",
-                            modifier = Modifier.size(32.dp),
-                            colorFilter = ColorFilter.tint(Color.White)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "컨텐츠\n보상 보기",
-                            textAlign = TextAlign.Center
-                        )
-                    }
+                    Text("검색")
+                }
+            }
+
+            Button(
+                onClick = {
+                    // ContentRewardActivity로 이동하는 로직은 여기서 처리하지 않음
+                },
+                modifier = Modifier
+                    .size(120.dp)
+                    .align(Alignment.BottomStart)
+                    .padding(start = 16.dp, bottom = 16.dp),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.reward),
+                        contentDescription = "컨텐츠 보상",
+                        modifier = Modifier.size(32.dp),
+                        colorFilter = ColorFilter.tint(Color.White)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "컨텐츠\n보상 보기",
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         }
