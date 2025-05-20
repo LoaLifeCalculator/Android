@@ -27,6 +27,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.platform.LocalContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,6 +56,8 @@ fun MainScreen(
     errorMessage: String?,
     onSearch: (String) -> Unit
 ) {
+    val context = LocalContext.current
+    
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -132,7 +135,8 @@ fun MainScreen(
 
             Button(
                 onClick = {
-                    // ContentRewardActivity로 이동하는 로직은 여기서 처리하지 않음
+                    val intent = Intent(context, ContentRewardActivity::class.java)
+                    context.startActivity(intent)
                 },
                 modifier = Modifier
                     .size(120.dp)
