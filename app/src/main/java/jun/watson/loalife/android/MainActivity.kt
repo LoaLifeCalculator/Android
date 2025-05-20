@@ -20,6 +20,10 @@ import androidx.core.view.WindowCompat
 import jun.watson.R
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.text.TextStyle
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,17 +51,23 @@ class MainActivity : ComponentActivity() {
                             .fillMaxSize()
                             .padding(16.dp)
                     ) {
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = "로생 계산기",
-                                fontSize = 24.sp,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(vertical = 16.dp)
-                            )
-                        }
+                        Text(
+                            text = "로생 계산기",
+                            style = TextStyle(
+                                fontSize = 36.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Default,
+                                color = MaterialTheme.colorScheme.primary,
+                                shadow = Shadow(
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                                    blurRadius = 3f
+                                )
+                            ),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .align(Alignment.TopCenter)
+                                .padding(top = 24.dp)
+                        )
 
                         var nickname by remember { mutableStateOf("") }
 
@@ -98,35 +108,34 @@ class MainActivity : ComponentActivity() {
                             ) {
                                 Text("검색")
                             }
+                        }
 
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            Button(
-                                onClick = {
-                                    val intent = Intent(this@MainActivity, ContentRewardActivity::class.java)
-                                    startActivity(intent)
-                                },
-                                modifier = Modifier
-                                    .size(120.dp)
-                                    .align(Alignment.CenterHorizontally),
-                                shape = RoundedCornerShape(16.dp)
+                        Button(
+                            onClick = {
+                                val intent = Intent(this@MainActivity, ContentRewardActivity::class.java)
+                                startActivity(intent)
+                            },
+                            modifier = Modifier
+                                .size(120.dp)
+                                .align(Alignment.BottomStart)
+                                .padding(start = 16.dp, bottom = 16.dp),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
                             ) {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    Image(
-                                        painter = painterResource(id = R.drawable.reward),
-                                        contentDescription = "컨텐츠 보상",
-                                        modifier = Modifier.size(32.dp),
-                                        colorFilter = ColorFilter.tint(Color.White)
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text(
-                                        text = "컨텐츠\n보상 보기",
-                                        textAlign = TextAlign.Center
-                                    )
-                                }
+                                Image(
+                                    painter = painterResource(id = R.drawable.reward),
+                                    contentDescription = "컨텐츠 보상",
+                                    modifier = Modifier.size(32.dp),
+                                    colorFilter = ColorFilter.tint(Color.White)
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "컨텐츠\n보상 보기",
+                                    textAlign = TextAlign.Center
+                                )
                             }
                         }
                     }
@@ -149,17 +158,23 @@ fun AppAndroidPreview() {
                     .fillMaxSize()
                     .padding(16.dp)
             ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "로생 계산기",
-                        fontSize = 24.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(vertical = 16.dp)
-                    )
-                }
+                Text(
+                    text = "로생 계산기",
+                    style = TextStyle(
+                        fontSize = 36.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Default,
+                        color = MaterialTheme.colorScheme.primary,
+                        shadow = Shadow(
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                            blurRadius = 3f
+                        )
+                    ),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 24.dp)
+                )
 
                 var nickname by remember { mutableStateOf("") }
 
@@ -185,32 +200,31 @@ fun AppAndroidPreview() {
                     ) {
                         Text("검색")
                     }
+                }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Button(
-                        onClick = { },
-                        modifier = Modifier
-                            .size(120.dp)
-                            .align(Alignment.CenterHorizontally),
-                        shape = RoundedCornerShape(16.dp)
+                Button(
+                    onClick = { },
+                    modifier = Modifier
+                        .size(120.dp)
+                        .align(Alignment.BottomStart)
+                        .padding(start = 16.dp, bottom = 16.dp),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.reward),
-                                contentDescription = "컨텐츠 보상",
-                                modifier = Modifier.size(32.dp),
-                                colorFilter = ColorFilter.tint(Color.White)
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "컨텐츠\n보상 보기",
-                                textAlign = TextAlign.Center
-                            )
-                        }
+                        Image(
+                            painter = painterResource(id = R.drawable.reward),
+                            contentDescription = "컨텐츠 보상",
+                            modifier = Modifier.size(32.dp),
+                            colorFilter = ColorFilter.tint(Color.White)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "컨텐츠\n보상 보기",
+                            textAlign = TextAlign.Center
+                        )
                     }
                 }
             }
