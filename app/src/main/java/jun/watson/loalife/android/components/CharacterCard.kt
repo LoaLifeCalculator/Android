@@ -118,7 +118,7 @@ fun CharacterCard(
                     ) {
                         Text(
                             text = character.characterName,
-                            fontSize = 16.sp
+                            fontSize = 14.sp
                         )
                         Image(
                             painter = painterResource(

@@ -19,7 +19,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
@@ -34,7 +37,9 @@ fun ResourcePriceTab(
     priceTexts: MutableMap<Item, String>,
     onClose: () -> Unit
 ) {
+    var isClosing by remember { mutableStateOf(false) }
     val slideInState = remember { Animatable(1f) }
+    
     LaunchedEffect(Unit) {
         slideInState.animateTo(
             targetValue = 0f,
@@ -43,6 +48,19 @@ fun ResourcePriceTab(
                 easing = FastOutSlowInEasing
             )
         )
+    }
+
+    LaunchedEffect(isClosing) {
+        if (isClosing) {
+            slideInState.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(
+                    durationMillis = 300,
+                    easing = FastOutSlowInEasing
+                )
+            )
+            onClose()
+        }
     }
 
     Card(
@@ -75,7 +93,7 @@ fun ResourcePriceTab(
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = onClose,
+                onClick = { isClosing = true },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp)

@@ -145,13 +145,7 @@ class ResultActivity : ComponentActivity() {
                     background = MaterialTheme.colorScheme.background
                 )
             ) {
-                Scaffold(
-                    // bottomBar = {
-                    //     Footer(
-                    //         onHomeClick = { finish() }
-                    //     )
-                    // },
-                ) { innerPadding ->
+                Scaffold { innerPadding ->
                     Box(modifier = Modifier.padding(innerPadding)) {
                         ResultContent(
                             nickname = nickname,

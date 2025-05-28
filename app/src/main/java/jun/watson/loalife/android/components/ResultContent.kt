@@ -48,6 +48,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -67,6 +68,10 @@ import jun.watson.loalife.android.model.dto.SearchResponseDto
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.input.pointer.pointerInput
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -93,7 +98,6 @@ fun ResultContent(
     var showTradableOnly by remember { mutableStateOf(false) }
     
     var selectedTab by remember { mutableStateOf(-1) }
-    var showGuide by remember { mutableStateOf(false) }
     
     val disabledServers = remember(searchResponse?.expeditions?.expeditions) {
         mutableStateListOf<String>().apply {
@@ -466,34 +470,56 @@ fun ResultContent(
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
+        val focusManager = LocalFocusManager.current
+        
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(16.dp)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) {
+                    focusManager.clearFocus()
+                },
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 5.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(
-                    onClick = { showGuide = true },
-                    modifier = Modifier.padding(0.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_info),
-                        contentDescription = "도움말",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
                 var searchText by remember { mutableStateOf(nickname) }
                 val context = LocalContext.current
+                var isSearchFocused by remember { mutableStateOf(false) }
+                val interactionSource = remember { MutableInteractionSource() }
+                val isFocused by interactionSource.collectIsFocusedAsState()
+                
+                LaunchedEffect(isFocused) {
+                    isSearchFocused = isFocused
+                }
+
+                if (!isSearchFocused) {
+                    TabButton(
+                        text = "도구",
+                        onClick = { selectedTab = 0 },
+                        modifier = Modifier.weight(0.3f)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    TabButton(
+                        text = "시세",
+                        onClick = { selectedTab = 1 },
+                        modifier = Modifier.weight(0.3f)
+                    )
+                }
+                
                 OutlinedTextField(
                     value = searchText,
                     onValueChange = { searchText = it },
                     modifier = Modifier
-                        .weight(1f)
+                        .weight(if (isSearchFocused) 1f else 0.5f)
                         .padding(horizontal = 8.dp),
                     singleLine = true,
                     placeholder = { Text("닉네임을 입력하세요") },
@@ -509,6 +535,7 @@ fun ResultContent(
                             (context as? ResultActivity)?.finish()
                         }
                     ),
+                    interactionSource = interactionSource,
                     trailingIcon = {
                         IconButton(
                             onClick = {
@@ -527,29 +554,8 @@ fun ResultContent(
                         }
                     }
                 )
-                Spacer(modifier = Modifier.width(48.dp))
             }
             
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                TabButton(
-                    text = "필터 및 도구",
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
-                    modifier = Modifier.weight(1f)
-                )
-                TabButton(
-                    text = "시세",
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 },
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
             when {
                 isLoading -> {
                     CircularProgressIndicator(
@@ -568,28 +574,39 @@ fun ResultContent(
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .padding(horizontal = 16.dp)
+                                .padding(horizontal = 6.dp)
                         ) {
-                            if (searchResponse.expeditions.expeditions != null) {
-                                TotalRewardSummary(
-                                    expeditions = searchResponse.expeditions.expeditions,
-                                    resourceMap = resourceStates.mapValues { Resource(it.key, it.value) },
-                                    serverCheckedStates = serverCheckedStates,
-                                    goldRewardStates = goldRewardStates,
-                                    excludedStates = excludedStates,
-                                    sortedServers = sortedServers.value,
-                                    chaosOption = chaosOption,
-                                    guardianOption = guardianOption,
-                                    disabledServers = disabledServers,
-                                    showTradableOnly = showTradableOnly
-                                )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            TotalRewardSummary(
+                                expeditions = searchResponse.expeditions.expeditions,
+                                resourceMap = resourceStates.mapValues { Resource(it.key, it.value) },
+                                serverCheckedStates = serverCheckedStates,
+                                goldRewardStates = goldRewardStates,
+                                excludedStates = excludedStates,
+                                sortedServers = sortedServers.value,
+                                chaosOption = chaosOption,
+                                guardianOption = guardianOption,
+                                disabledServers = disabledServers,
+                                showTradableOnly = showTradableOnly
+                            )
 
-                                Spacer(modifier = Modifier.height(16.dp))
+                            Spacer(modifier = Modifier.height(2.dp))
 
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f)
+                                    .pointerInput(Unit) {
+                                        awaitPointerEventScope {
+                                            while (true) {
+                                                awaitPointerEvent()
+                                                focusManager.clearFocus()
+                                            }
+                                        }
+                                    }
+                            ) {
                                 LazyColumn(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .weight(1f)
+                                    modifier = Modifier.fillMaxSize()
                                 ) {
                                     sortedServers.value.forEach { server ->
                                         val characters = searchResponse.expeditions.expeditions[server] ?: return@forEach
@@ -622,79 +639,39 @@ fun ResultContent(
 
                                         if (isExpanded) {
                                             itemsIndexed(filteredCharacters) { index, character ->
-                                                CharacterCard(
-                                                    character = character,
-                                                    resourceMap = resourceStates.mapValues { Resource(it.key, it.value) },
-                                                    checkedStates = serverCheckedStates["$server:${character.characterName}"] ?: emptyList(),
-                                                    goldRewardState = goldRewardStates[server]?.get(index) ?: false,
-                                                    excludedState = excludedStates[server]?.get(index) ?: false,
-                                                    detailedViewState = detailedViewStates["$server:${character.characterName}"] ?: false,
-                                                    onCheckedChange = { idx, checked -> updateCheckedState(server, character.characterName, idx, checked) },
-                                                    onGoldRewardChange = { checked -> updateGoldRewardState(server, index, checked) },
-                                                    onExcludedChange = { checked -> updateExcludedState(server, index, checked) },
-                                                    onDetailedViewChange = { checked -> updateDetailedViewState(server, character.characterName, checked) },
-                                                    chaosOption = chaosOption,
-                                                    guardianOption = guardianOption,
-                                                    showTradableOnly = showTradableOnly,
-                                                    index = index
-                                                )
+                                                Box(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .clickable(
+                                                            interactionSource = remember { MutableInteractionSource() },
+                                                            indication = null
+                                                        ) {
+                                                            focusManager.clearFocus()
+                                                        }
+                                                ) {
+                                                    CharacterCard(
+                                                        character = character,
+                                                        resourceMap = resourceStates.mapValues { Resource(it.key, it.value) },
+                                                        checkedStates = serverCheckedStates["$server:${character.characterName}"] ?: emptyList(),
+                                                        goldRewardState = goldRewardStates[server]?.get(index) ?: false,
+                                                        excludedState = excludedStates[server]?.get(index) ?: false,
+                                                        detailedViewState = detailedViewStates["$server:${character.characterName}"] ?: false,
+                                                        onCheckedChange = { idx, checked -> updateCheckedState(server, character.characterName, idx, checked) },
+                                                        onGoldRewardChange = { checked -> updateGoldRewardState(server, index, checked) },
+                                                        onExcludedChange = { checked -> updateExcludedState(server, index, checked) },
+                                                        onDetailedViewChange = { checked -> updateDetailedViewState(server, character.characterName, checked) },
+                                                        chaosOption = chaosOption,
+                                                        guardianOption = guardianOption,
+                                                        showTradableOnly = showTradableOnly,
+                                                        index = index
+                                                    )
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
                         }
-                    }
-                }
-            }
-        }
-
-        if (showGuide) {
-            val alpha = remember { Animatable(0f) }
-            
-            LaunchedEffect(Unit) {
-                alpha.animateTo(
-                    targetValue = 1f,
-                    animationSpec = tween(
-                        durationMillis = 300,
-                        easing = FastOutSlowInEasing
-                    )
-                )
-                delay(5000)
-                alpha.animateTo(
-                    targetValue = 0f,
-                    animationSpec = tween(
-                        durationMillis = 300,
-                        easing = FastOutSlowInEasing
-                    )
-                )
-                showGuide = false
-            }
-            
-            Box(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                Card(
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .padding(top = 8.dp, start = 16.dp, end = 16.dp)
-                        .wrapContentSize()
-                        .graphicsLayer(alpha = alpha.value),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
-                    ),
-                    elevation = CardDefaults.cardElevation(
-                        defaultElevation = 8.dp
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
-                    ) {
-                        Text(
-                            text = "다양한 검색 설정은 '필터 및 도구' 탭에서 적용할 수 있습니다.",
-                            fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
                     }
                 }
             }
@@ -774,8 +751,8 @@ fun ServerStickyHeader(
                         color = MaterialTheme.colorScheme.primary
                     )
                     if (goldInfo != null) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Text(
                                 text = "거래 가능: ${"%,.0f".format(goldInfo.first)}G",
