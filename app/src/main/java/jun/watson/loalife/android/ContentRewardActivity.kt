@@ -467,7 +467,7 @@ fun GuardianRewardItem(guardian: Guardian, resources: List<Resource>, cardColor:
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = guardian.minimumLevel.toString(),
+                    text = guardian.korean,
                     style = MaterialTheme.typography.titleMedium
                 )
                 Row(
