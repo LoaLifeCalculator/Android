@@ -27,7 +27,6 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import jun.watson.BuildConfig
-import jun.watson.loalife.android.components.Footer
 import jun.watson.loalife.android.components.ResultContent
 import jun.watson.loalife.android.model.dto.SearchResponseDto
 import kotlinx.serialization.json.Json
@@ -147,11 +146,11 @@ class ResultActivity : ComponentActivity() {
                 )
             ) {
                 Scaffold(
-                    bottomBar = {
-                        Footer(
-                            onHomeClick = { finish() }
-                        )
-                    }
+                    // bottomBar = {
+                    //     Footer(
+                    //         onHomeClick = { finish() }
+                    //     )
+                    // },
                 ) { innerPadding ->
                     Box(modifier = Modifier.padding(innerPadding)) {
                         ResultContent(

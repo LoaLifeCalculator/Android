@@ -56,7 +56,6 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import jun.watson.BuildConfig
 import jun.watson.R
-import jun.watson.loalife.android.components.Footer
 import jun.watson.loalife.android.model.data.ChaosDungeon
 import jun.watson.loalife.android.model.data.Guardian
 import jun.watson.loalife.android.model.data.Item
@@ -94,8 +93,7 @@ class ContentRewardActivity : ComponentActivity() {
                 ) {
                     ContentRewardScreen(
                         client = client,
-                        json = json,
-                        onFinish = { finish() }
+                        json = json
                     )
                 }
             }
@@ -112,8 +110,7 @@ class ContentRewardActivity : ComponentActivity() {
 @Composable
 fun ContentRewardScreen(
     client: HttpClient,
-    json: Json,
-    onFinish: () -> Unit
+    json: Json
 ) {
     var resources by remember { mutableStateOf<List<Resource>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
@@ -144,11 +141,11 @@ fun ContentRewardScreen(
     }
 
     Scaffold(
-        bottomBar = {
-            Footer(
-                onHomeClick = onFinish
-            )
-        }
+        // bottomBar = {
+        //     Footer(
+        //         onHomeClick = onFinish
+        //     )
+        // },
     ) { innerPadding ->
         Column(
             modifier = Modifier
