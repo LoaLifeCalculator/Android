@@ -74,7 +74,9 @@ fun MainScreen(
     val context = LocalContext.current
     
     Surface(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(bottom = 30.dp),
         color = MaterialTheme.colorScheme.background
     ) {
         Box(
